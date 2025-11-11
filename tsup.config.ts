@@ -1,5 +1,4 @@
 import { defineConfig } from 'tsup';
-import path from 'path';
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -29,14 +28,4 @@ export default defineConfig({
   ],
   bundle: true,
   skipNodeModulesBundle: true,
-  esbuildOptions(options) {
-    options.alias = {
-      '@': path.resolve(__dirname, '.'),
-      '@app': path.resolve(__dirname, 'src', 'app'),
-      '@core': path.resolve(__dirname, 'src'),
-      '@lib': path.resolve(__dirname, 'src', 'lib'),
-      '@ext': path.resolve(__dirname, 'src', 'external'),
-      '@db': path.resolve(__dirname, 'src', 'app', 'db'),
-    };
-  },
 });
