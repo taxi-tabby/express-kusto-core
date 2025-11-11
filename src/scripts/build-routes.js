@@ -80,4 +80,9 @@ function formatBytes(bytes) {
 }
 
 // 실행
-buildRoutes();
+if (require.main === module) {
+    buildRoutes();
+}
+
+// Export for programmatic use
+module.exports = { buildRoutes };

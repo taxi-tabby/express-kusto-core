@@ -151,3 +151,13 @@ if (!fs.existsSync(outputDir)) {
 fs.writeFileSync(OUTPUT_FILE, generatedCode);
 
 console.log(`✅ Route map generated: ${OUTPUT_FILE}`);
+
+// Export for programmatic use
+module.exports = { generateRoutesMap };
+
+function generateRoutesMap() {
+    // This function wraps the entire script logic
+    // For now, we just re-export the main execution
+    eval(fs.readFileSync(__filename, 'utf8').split('module.exports')[0]);
+}
+
