@@ -123,7 +123,7 @@ export type GetRepositoryType<T extends RepositoryName> = T extends keyof Reposi
 `;
 
 	// Write the generated types to file
-	const outputPath = path.join(process.cwd(), 'src', 'core', 'lib', 'types', 'generated-repository-types.ts');
+	const outputPath = path.join(process.cwd(), 'src', 'core', 'generated-repository-types.ts');
 
 	// Ensure directory exists
 	const outputDir = path.dirname(outputPath);

@@ -516,7 +516,7 @@ export type GetMiddlewareParamType<T extends MiddlewareParamName> = T extends ke
 `;
 
 	// Write the generated types to file
-	const outputPath = path.join(process.cwd(), 'src', 'core', 'lib', 'types', 'generated-injectable-types.ts');
+	const outputPath = path.join(process.cwd(), 'src', 'core', 'generated-injectable-types.ts');
 
 	// Ensure directory exists
 	const outputDir = path.dirname(outputPath);
