@@ -50,7 +50,7 @@ function generateDatabaseTypes() {
 /**
  * Extend PrismaManager class with proper method overloads
  */
-declare module '../prismaManager' {
+declare module 'kusto-framework-core' {
   interface PrismaManager {
 ${methodOverloads}
 ${getClientOverloads}
