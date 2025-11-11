@@ -15,4 +15,7 @@ export default defineConfig({
   ],
   bundle: true,
   noExternal: [/.*/], // 모든 것을 번들링
+  // CommonJS에서 default export 지원
+  cjsInterop: true,
+  shims: true,
 });
