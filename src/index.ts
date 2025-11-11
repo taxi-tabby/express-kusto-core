@@ -92,6 +92,14 @@ export { log, logger } from './external/winston';
 export * from './external/util';
 
 // ============================================
+// Re-exported dependencies (middleware)
+// ============================================
+export { cors, cookieParser, helmet, bodyParser } from './lib/dependencies';
+export type { CorsOptions, CorsOptionsDelegate, CorsRequest } from './lib/dependencies';
+export type { CookieParseOptions } from './lib/dependencies';
+export type { HelmetOptions } from './lib/dependencies';
+
+// ============================================
 // Build & Generation Scripts
 // ============================================
 export * as scripts from './scripts';
