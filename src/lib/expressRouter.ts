@@ -6,9 +6,9 @@ import { RequestHandler as CustomRequestHandler, RequestConfig, ResponseConfig, 
 import { Injectable, MiddlewareName, MiddlewareParams, MIDDLEWARE_PARAM_MAPPING } from './types/generated-injectable-types';
 import { DatabaseNamesUnion, DatabaseClientMap } from './types/generated-db-types';
 import { DependencyInjector } from './dependencyInjector';
-import { prismaManager } from '@lib/prismaManager'
-import { repositoryManager } from '@lib/repositoryManager'
-import { kustoManager } from '@lib/kustoManager'
+import { prismaManager } from './prismaManager'
+import { repositoryManager } from './repositoryManager'
+import { kustoManager } from './kustoManager'
 import { CrudQueryParser, PrismaQueryBuilder, CrudResponseFormatter, JsonApiTransformer, JsonApiResponse, JsonApiResource, JsonApiRelationship, JsonApiErrorResponse } from './crudHelpers';
 import { ErrorFormatter } from './errorFormatter';
 import { serializeBigInt, serialize } from './serializer';

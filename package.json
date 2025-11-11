@@ -1,16 +1,40 @@
 {
   "name": "kusto-core",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Express.js core library with Prisma integration, validation, and schema API",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
+    "build": "tsup && tsc-alias -p tsconfig.json",
+    "dev": "tsup --watch",
+    "prepublishOnly": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "description": "",
+  "keywords": [
+    "express",
+    "prisma",
+    "validation",
+    "schema",
+    "api",
+    "typescript"
+  ],
   "author": "rkdmf0000@gmail.com",
   "license": "MIT",
   "dependencies": {
-    "@prisma/client": "^6.11.0",
+    "@prisma/client": "^6.0.0",
     "@types/archiver": "^6.0.3",
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.9",
@@ -23,7 +47,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
-    "express": "^4.18.3",
+    "express": "^4.18.0",
     "helmet": "^8.0.0",
     "html-to-image": "^1.11.11",
     "http-proxy-middleware": "^2.0.6",
@@ -37,6 +61,7 @@
   "devDependencies": {
     "@babel/core": "^7.27.1",
     "@babel/preset-env": "^7.27.2",
+    "@rollup/plugin-alias": "^6.0.0",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
     "@types/ejs": "^3.1.5",
@@ -52,10 +77,16 @@
     "prisma": "^6.11.0",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
+    "tsup": "^8.5.0",
     "typescript": "^5.8.3",
     "webpack": "^5.99.9",
     "webpack-cli": "^5.1.4",
     "webpack-node-externals": "^3.0.0"
+  },
+  "peerDependencies": {
+    "@prisma/client": "^6.0.0",
+    "express": "^4.18.0"
   },
   "_moduleAliases": {
     "@": "./",
@@ -65,5 +96,4 @@
     "@ext": "./src/core/external",
     "@db": "./src/app/db"
   }
-
 }
