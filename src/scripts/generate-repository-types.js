@@ -161,7 +161,7 @@ export type RepositoryName = keyof typeof REPOSITORY_REGISTRY;
 export type GetRepositoryType<T extends RepositoryName> = T extends keyof RepositoryTypeMap ? RepositoryTypeMap[T] : never;
 `;
 
-	const outputPath = path.join(process.cwd(), 'src', 'core', 'lib', 'types', 'generated-repository-types.ts');
+	const outputPath = path.join(process.cwd(), 'src', 'core', 'generated-repository-types.ts');
 
 	// Ensure directory exists
 	const outputDir = path.dirname(outputPath);

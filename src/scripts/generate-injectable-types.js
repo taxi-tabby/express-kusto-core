@@ -587,7 +587,7 @@ export type GetMiddlewareType<T extends MiddlewareName> = T extends keyof Middle
 export type GetMiddlewareParamType<T extends MiddlewareParamName> = T extends keyof MiddlewareParams ? MiddlewareParams[T] : never;
 `;
 
-	const outputPath = path.join(process.cwd(), 'src', 'core', 'lib', 'types', 'generated-injectable-types.ts');
+	const outputPath = path.join(process.cwd(), 'src', 'core', 'generated-injectable-types.ts');
 
 	// Ensure directory exists
 	const outputDir = path.dirname(outputPath);

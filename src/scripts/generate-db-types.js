@@ -116,7 +116,7 @@ ${classExtension}
 `;
 
   // Write the generated types to a file
-  const outputPath = path.join(process.cwd(), 'src', 'core', 'lib', 'types', 'generated-db-types.ts');
+  const outputPath = path.join(process.cwd(), 'src', 'core', 'generated-db-types.ts');
   
   // Ensure directory exists
   const outputDir = path.dirname(outputPath);
