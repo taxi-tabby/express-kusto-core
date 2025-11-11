@@ -5,18 +5,12 @@ Express.js core library with Prisma integration, validation, and schema API supp
 ## Installation
 
 ```bash
-npm install kusto-core
+npm install kusto-framework-core
 ```
 
-## Features
+## NOTICE
+In develop
 
-- 🚀 Express.js application wrapper with enhanced functionality
-- 🔄 Prisma ORM integration
-- ✅ Request/Response validation system
-- 📝 Schema API with automatic documentation
-- 🔐 Built-in error handling and formatting
-- 📊 Winston logging integration
-- 🛠️ Environment configuration loader
 
 ## License
 
