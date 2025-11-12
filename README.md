@@ -28,30 +28,41 @@ await app.start();
 
 ## Type Inference for IntelliSense
 
-To enable full type inference and autocomplete in your routes, pass the generated types to the Application config:
+To enable full type inference and autocomplete in your routes, you need to use **module augmentation**.
 
-**Step 1: Start your application with types**
+### Setup (One-time)
+
+Create a type declaration file in your project:
+
+**`src/types/kusto-types.d.ts`** (or any `.d.ts` file in your project):
 
 ```typescript
-import { Application } from 'kusto-framework-core';
-import type { Injectable } from './app/injectables/types/generated-injectable-types';
-import type { RepositoryTypeMap } from './app/repositories/types/generated-repository-types';
-import type { DatabaseClientMap } from './app/db/types/generated-db-types';
+import type { Injectable } from '../app/injectables/types/generated-injectable-types';
+import type { RepositoryTypeMap } from '../app/repositories/types/generated-repository-types';
+import type { DatabaseClientMap } from '../app/db/types/generated-db-types';
 
-const app = new Application({
-    port: 3000,
-    basePath: './src/app',
-    types: {
-        injectable: {} as Injectable,
-        repositories: {} as RepositoryTypeMap,
-        databases: {} as DatabaseClientMap
-    }
-});
-
-await app.start();
+declare module 'kusto-framework-core' {
+  interface KustoConfigurableTypes {
+    Injectable: Injectable;
+    RepositoryTypeMap: RepositoryTypeMap;
+    DatabaseClientMap: DatabaseClientMap;
+  }
+}
 ```
 
-**Step 2: Enjoy full IntelliSense in your routes!**
+**Important**: Make sure this file is included in your `tsconfig.json`:
+
+```json
+{
+  "include": [
+    "src/**/*"
+  ]
+}
+```
+
+### Usage
+
+After setting up the type declaration, IntelliSense will work automatically:
 
 ```typescript
 import { ExpressRouter } from 'kusto-framework-core';
@@ -75,27 +86,14 @@ router.GET((req, res, injected, repo, db) => {
 });
 ```
 
-### Alternative: Type Augmentation (Optional)
+### Troubleshooting
 
-If you prefer not to pass types every time, you can use module augmentation:
+If IntelliSense doesn't work:
 
-**`src/types/kusto-augmentation.d.ts`:**
-
-```typescript
-import type { Injectable } from '../app/injectables/types/generated-injectable-types';
-import type { RepositoryTypeMap } from '../app/repositories/types/generated-repository-types';
-import type { DatabaseClientMap } from '../app/db/types/generated-db-types';
-
-declare module 'kusto-framework-core' {
-  interface KustoConfigurableTypes {
-    Injectable: Injectable;
-    RepositoryTypeMap: RepositoryTypeMap;
-    DatabaseClientMap: DatabaseClientMap;
-  }
-}
-```
-
-Then types will work globally without passing them to Application.
+1. **Restart TypeScript Server**: In VSCode, press `Ctrl+Shift+P` and run "TypeScript: Restart TS Server"
+2. **Check tsconfig.json**: Make sure your `.d.ts` file is included
+3. **Verify imports**: Make sure the paths in your type declaration file are correct
+4. **Rebuild**: Run `npm run build` or restart your dev server
 
 ## Configuration
 
