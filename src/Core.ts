@@ -14,13 +14,47 @@ import { DependencyInjector } from './lib/dependencyInjector';
 import { repositoryManager } from './lib/repositoryManager';
 import { SchemaApiSetup } from './lib/schemaApiSetup';
 
+/**
+ * Core configuration interface
+ */
 export interface CoreConfig {
+    /** Base path for the application (default: './app') */
     basePath?: string;
+    
+    /** Path to routes directory (default: basePath + '/routes') */
     routesPath?: string;
+    
+    /** Path to views directory (default: basePath + '/views') */
     viewsPath?: string;
+    
+    /** 
+     * Path to injectables directory (default: basePath + '/injectables')
+     * Note: Injectable modules are registered at build time via generate-injectable-types script
+     */
+    injectablesPath?: string;
+    
+    /** 
+     * Path to repositories directory (default: basePath + '/repositories')
+     * Note: Repositories are registered at build time via generate-repository-types script
+     */
+    repositoriesPath?: string;
+    
+    /** 
+     * Path to database schemas directory (default: basePath + '/db')
+     * This path is used at runtime to locate Prisma schema files
+     */
+    dbPath?: string;
+    
+    /** View engine to use (default: 'ejs') */
     viewEngine?: string;
+    
+    /** Server port (default: 3000) */
     port?: number;
+    
+    /** Server host (default: '0.0.0.0') */
     host?: string;
+    
+    /** Whether to trust proxy headers (default: true) */
     trustProxy?: boolean;
 }
 
@@ -52,6 +86,9 @@ export class Core {
             basePath,
             routesPath: `${basePath}/routes`,
             viewsPath: `${basePath}/views`,
+            injectablesPath: `${basePath}/injectables`,
+            repositoriesPath: `${basePath}/repositories`,
+            dbPath: `${basePath}/db`,
             viewEngine: 'ejs',
             port: parseInt(process.env.PORT || '3000'),
             host: process.env.HOST || '0.0.0.0',
@@ -73,7 +110,22 @@ export class Core {
 
         // Merge custom config with defaults
         if (customConfig) {
-            this._config = { ...this._config, ...customConfig };
+            // Get the base path (either custom or default)
+            const basePath = customConfig.basePath || this._config.basePath;
+            
+            // Create merged config with intelligent defaults
+            this._config = {
+                basePath,
+                routesPath: customConfig.routesPath || `${basePath}/routes`,
+                viewsPath: customConfig.viewsPath || `${basePath}/views`,
+                injectablesPath: customConfig.injectablesPath || `${basePath}/injectables`,
+                repositoriesPath: customConfig.repositoriesPath || `${basePath}/repositories`,
+                dbPath: customConfig.dbPath || `${basePath}/db`,
+                viewEngine: customConfig.viewEngine || this._config.viewEngine,
+                port: customConfig.port !== undefined ? customConfig.port : this._config.port,
+                host: customConfig.host || this._config.host,
+                trustProxy: customConfig.trustProxy !== undefined ? customConfig.trustProxy : this._config.trustProxy
+            };
         }              // Initialize PrismaManager before setting up routes
         await this.initializePrismaManager();
         
@@ -368,7 +420,7 @@ export class Core {
     private async initializePrismaManager(): Promise<void> {
         try {
             log.Info('🗄️ Initializing Prisma Manager...');
-            await prismaManager.initialize();
+            await prismaManager.initialize(this._config.dbPath);
             
             const status = prismaManager.getStatus();
             log.Info('Prisma Manager initialization complete', {

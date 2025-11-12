@@ -7,15 +7,67 @@ import { log } from './external/winston';
  * Application class - Simple and intuitive interface for the core functionality
  * 
  * @example
+ * Basic usage with default paths (./app/routes, ./app/views, ./app/db, etc.)
  * ```typescript
- * import { Application } from './core';
+ * import { Application } from '@kusto/core';
  * 
  * const app = new Application({
  *   port: 3000,
- *   routesPath: './app/routes'
+ *   host: '0.0.0.0'
  * });
  * 
- * app.start();
+ * await app.start();
+ * ```
+ * 
+ * @example
+ * Custom base path (all sub-paths will be relative to basePath)
+ * ```typescript
+ * const app = new Application({
+ *   basePath: './src/app',  // routes, views, db will be ./src/app/routes, etc.
+ *   port: 3000
+ * });
+ * ```
+ * 
+ * @example
+ * Custom individual paths
+ * ```typescript
+ * import { Application } from '@kusto/core';
+ * import { envLoader } from './config/env';
+ * 
+ * const app = new Application({
+ *   port: parseInt(envLoader.get('PORT') || '3000'),
+ *   host: envLoader.get('HOST') || '0.0.0.0',
+ *   routesPath: './src/app/routes',      // Custom route path
+ *   viewsPath: './src/app/views',        // Custom view path
+ *   dbPath: './src/app/db',              // Custom db path
+ *   viewEngine: 'ejs',
+ *   trustProxy: true
+ * });
+ * 
+ * await app.start();
+ * ```
+ * 
+ * @example
+ * Mix of basePath and custom paths
+ * ```typescript
+ * const app = new Application({
+ *   basePath: './src/app',               // Default for unspecified paths
+ *   routesPath: './custom/routes',       // Override routes path
+ *   dbPath: './database/schemas',        // Override db path
+ *   // viewsPath will use basePath: ./src/app/views
+ *   port: 3000
+ * });
+ * ```
+ * 
+ * @example
+ * Using environment variables for paths
+ * ```typescript
+ * const app = new Application({
+ *   port: parseInt(process.env.PORT || '3000'),
+ *   basePath: process.env.APP_BASE_PATH,    // Optional
+ *   routesPath: process.env.ROUTES_PATH,    // Optional
+ *   dbPath: process.env.DB_PATH             // Optional
+ * });
  * ```
  */
 export class Application {
