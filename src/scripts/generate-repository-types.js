@@ -49,29 +49,39 @@ function scanDirectory(dirPath, basePath = '', repositories = []) {
 
 /**
  * Generate TypeScript types for repository classes
+ * @param {string} repositoriesPath - Custom path to repositories directory (optional)
+ * @param {string} outputDir - Custom output directory for generated types (optional, default: 'src/core')
  */
-function generateRepositoryTypes() {
-	const repositoryPath = path.join(process.cwd(), 'src', 'app', 'repos');
+function generateRepositoryTypes(repositoriesPath, outputDir = 'src/core') {
+	// Use custom path if provided, otherwise default to src/app/repos
+	const reposPath = repositoriesPath 
+		? path.join(process.cwd(), repositoriesPath)
+		: path.join(process.cwd(), 'src', 'app', 'repos');
 
-	if (!fs.existsSync(repositoryPath)) {
+	if (!fs.existsSync(reposPath)) {
 		console.log('Repository directory not found, creating default types...');
-		generateDefaultTypes();
+		generateDefaultTypes(outputDir);
 		return;
 	}
 
 	// Recursively scan for all repository TypeScript files
-	const repositories = scanDirectory(repositoryPath);
+	const repositories = scanDirectory(reposPath);
 
 	console.log('Found repository files:', repositories.map(r => r.repositoryPath));
 
 	if (repositories.length === 0) {
-		generateDefaultTypes();
+		generateDefaultTypes(outputDir);
 		return;
 	}
 
-	// Generate import statements
+	// Calculate relative path from output directory to repositories directory
+	const outputPath = path.join(process.cwd(), outputDir, 'generated-repository-types.ts');
+	const outputDirPath = path.dirname(outputPath);
+	const relativePathToRepos = path.relative(outputDirPath, reposPath).replace(/\\/g, '/');
+
+	// Generate import statements (using relative paths from generated file location)
 	const imports = repositories.map(repository =>
-		`import ${repository.className} from '@app/repos/${repository.importPath}';`
+		`import ${repository.className} from '${relativePathToRepos}/${repository.importPath}';`
 	).join('\n');
 
 	// Generate repository type definitions
@@ -95,13 +105,13 @@ export interface RepositoryTypeMap {
   // Add TypeScript files ending with .repository.ts to src/app/repos/ and regenerate types
 }`;
 
-	// Generate repository registry for runtime loading
+	// Generate repository registry for runtime loading (using relative paths)
 	const repositoryRegistry = repositories.map(repository =>
-		`  '${repository.propertyName}': () => import('@app/repos/${repository.importPath}'),`
+		`  '${repository.propertyName}': () => import('${relativePathToRepos}/${repository.importPath}'),`
 	).join('\n');
 
 	const typeDefinition = `// Auto-generated file - DO NOT EDIT MANUALLY
-// Source: src/app/repos/
+// Source: ${repositoriesPath || 'src/app/repos'}
 
 ${imports}
 
@@ -123,12 +133,9 @@ export type GetRepositoryType<T extends RepositoryName> = T extends keyof Reposi
 `;
 
 	// Write the generated types to file
-	const outputPath = path.join(process.cwd(), 'src', 'core', 'generated-repository-types.ts');
-
 	// Ensure directory exists
-	const outputDir = path.dirname(outputPath);
-	if (!fs.existsSync(outputDir)) {
-		fs.mkdirSync(outputDir, { recursive: true });
+	if (!fs.existsSync(outputDirPath)) {
+		fs.mkdirSync(outputDirPath, { recursive: true });
 	}
 
 	fs.writeFileSync(outputPath, typeDefinition, 'utf8');

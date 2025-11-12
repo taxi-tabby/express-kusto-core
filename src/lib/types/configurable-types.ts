@@ -26,28 +26,29 @@
  */
 export interface KustoConfigurableTypes {
     /** Injectable modules (dependency injection) */
-    Injectable: Record<string, any>;
+    Injectable: any;
     
     /** Repository type map */
-    RepositoryTypeMap: Record<string, any>;
+    RepositoryTypeMap: any;
     
     /** Database client map */
-    DatabaseClientMap: Record<string, any>;
+    DatabaseClientMap: any;
 }
 
 /**
  * Helper type to get injectable types
+ * Directly uses KustoConfigurableTypes to pick up module augmentation
  */
-export type GetInjectable<T extends KustoConfigurableTypes = KustoConfigurableTypes> = T['Injectable'];
+export type GetInjectable<T extends KustoConfigurableTypes = KustoConfigurableTypes> = KustoConfigurableTypes['Injectable'];
 
 /**
  * Helper type to get repository manager type
- * Uses the actual implementation when types are not augmented
+ * Directly uses KustoConfigurableTypes to pick up module augmentation
  */
-export type GetRepositoryManager<T extends KustoConfigurableTypes = KustoConfigurableTypes> = any;
+export type GetRepositoryManager<T extends KustoConfigurableTypes = KustoConfigurableTypes> = KustoConfigurableTypes['RepositoryTypeMap'];
 
 /**
  * Helper type to get Prisma manager type  
- * Uses the actual implementation when types are not augmented
+ * Directly uses KustoConfigurableTypes to pick up module augmentation
  */
-export type GetPrismaManager<T extends KustoConfigurableTypes = KustoConfigurableTypes> = any;
+export type GetPrismaManager<T extends KustoConfigurableTypes = KustoConfigurableTypes> = KustoConfigurableTypes['DatabaseClientMap'];

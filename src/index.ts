@@ -72,7 +72,7 @@ export * from './lib/errorCodes';
 // Utilities
 // ============================================
 export { EnvironmentLoader } from './lib/environmentLoader';
-export { DependencyInjector } from './lib/dependencyInjector';
+export { DependencyInjector, DependencyInjectorConfig } from './lib/dependencyInjector';
 export { DocumentationGenerator } from './lib/documentationGenerator';
 export { 
     serialize, 

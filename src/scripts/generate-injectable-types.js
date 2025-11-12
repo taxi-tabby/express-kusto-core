@@ -341,22 +341,27 @@ async function scanDirectory(dirPath, basePath = '', modules = []) {
 /**
  * Generate TypeScript types for injectable modules
  */
-async function generateInjectableTypes() {
-	const injectablePath = path.join(process.cwd(), 'src', 'app', 'injectable');
+async function generateInjectableTypes(injectablePath = './src/app/injectable', outputDir = './src/core') {
+	const injectablePathAbsolute = path.join(process.cwd(), injectablePath);
+	const outputDirPath = path.join(process.cwd(), outputDir);
+	const outputPath = path.join(outputDirPath, 'generated-injectable-types.ts');
 
-	if (!fs.existsSync(injectablePath)) {
+	// Calculate relative path from output file to injectable directory
+	const relativePathToInjectable = path.relative(outputDirPath, injectablePathAbsolute).replace(/\\/g, '/');
+
+	if (!fs.existsSync(injectablePathAbsolute)) {
 		console.log('Injectable directory not found, creating default types...');
-		generateDefaultTypes();
+		generateDefaultTypes(outputPath);
 		return;
 	}
 	// Recursively scan for all TypeScript modules
-	const modules = await scanDirectory(injectablePath);
+	const modules = await scanDirectory(injectablePathAbsolute);
 	console.log('Found injectable modules:', modules.filter(m => m.type === 'module').map(m => m.modulePath));
 	console.log('Found middleware modules:', modules.filter(m => m.type === 'middleware').map(m => m.modulePath));
 	console.log('Found middleware interface modules:', modules.filter(m => m.type === 'middleware-interface').map(m => m.modulePath));
 
 	if (modules.length === 0) {
-		generateDefaultTypes();
+		generateDefaultTypes(outputPath);
 		return;
 	}	// Separate modules, middlewares, named middlewares, and middleware interfaces
 	const moduleEntries = modules.filter(m => m.type === 'module');
@@ -364,7 +369,7 @@ async function generateInjectableTypes() {
 	const namedMiddlewareEntries = modules.filter(m => m.type === 'namedMiddleware');
 	const middlewareInterfaceEntries = modules.filter(m => m.type === 'middleware-interface');
 
-	console.log('Found named middleware exports:', namedMiddlewareEntries.map(m => `${m.namedExport} from ${m.modulePath}`));	// Generate import statements
+	console.log('Found named middleware exports:', namedMiddlewareEntries.map(m => `${m.namedExport} from ${m.modulePath}`));	// Generate import statements (using relative paths)
 	const imports = modules.map(module => {
 		if (module.type === 'middleware-interface') {
 			// For interface files, import the actual exported interface name
@@ -372,12 +377,12 @@ async function generateInjectableTypes() {
 			// Generate dynamic alias name based on the module path and property name
 			const pathPrefix = toPascalCase(module.modulePath.replace(/\.middleware\.interface$/, '').replace(/[\/\\]/g, '_'));
 			const aliasName = `${pathPrefix}${actualInterfaceName}Type`;
-			return `import { ${actualInterfaceName} as ${aliasName} } from '@app/injectable/${module.importPath}';`;
+			return `import { ${actualInterfaceName} as ${aliasName} } from '${relativePathToInjectable}/${module.importPath}';`;
 		} else if (module.type === 'namedMiddleware') {
 			// For named exports, import the specific named export
-			return `import { ${module.namedExport} as ${module.className} } from '@app/injectable/${module.importPath}';`;
+			return `import { ${module.namedExport} as ${module.className} } from '${relativePathToInjectable}/${module.importPath}';`;
 		}
-		return `import ${module.className} from '@app/injectable/${module.importPath}';`;
+		return `import ${module.className} from '${relativePathToInjectable}/${module.importPath}';`;
 	}).join('\n');
 	// Generate module type definitions
 	const moduleTypes = moduleEntries.map(module => {
@@ -424,13 +429,13 @@ export interface MiddlewareParams {
   // Add *.middleware.interface.ts files to src/app/injectable/ and regenerate types
 }`;
 
-	// Generate module registry for runtime loading
+	// Generate module registry for runtime loading (using relative paths)
 	const moduleRegistry = moduleEntries.map(module =>
-		`  '${module.propertyName}': () => import('@app/injectable/${module.importPath}'),`
+		`  '${module.propertyName}': () => import('${relativePathToInjectable}/${module.importPath}'),`
 	).join('\n');
-	// Generate middleware registry for runtime loading
+	// Generate middleware registry for runtime loading (using relative paths)
 	const middlewareRegistry = middlewareEntries.concat(namedMiddlewareEntries).map(middleware =>
-		`  '${middleware.propertyName}': () => import('@app/injectable/${middleware.importPath}'),`
+		`  '${middleware.propertyName}': () => import('${relativePathToInjectable}/${middleware.importPath}'),`
 	).join('\n');
 
 	// Generate middleware to parameter mapping
@@ -462,7 +467,7 @@ export interface MiddlewareParams {
 		: '  // No middleware parameter mappings found';
 
 	const typeDefinition = `// Auto-generated file - DO NOT EDIT MANUALLY
-// Source: src/app/injectable/
+// Source: ${injectablePath || 'src/app/injectable'}
 
 ${imports}
 
@@ -516,12 +521,9 @@ export type GetMiddlewareParamType<T extends MiddlewareParamName> = T extends ke
 `;
 
 	// Write the generated types to file
-	const outputPath = path.join(process.cwd(), 'src', 'core', 'generated-injectable-types.ts');
-
 	// Ensure directory exists
-	const outputDir = path.dirname(outputPath);
-	if (!fs.existsSync(outputDir)) {
-		fs.mkdirSync(outputDir, { recursive: true });
+	if (!fs.existsSync(outputDirPath)) {
+		fs.mkdirSync(outputDirPath, { recursive: true });
 	}
 
 	fs.writeFileSync(outputPath, typeDefinition, 'utf8');
@@ -531,7 +533,7 @@ export type GetMiddlewareParamType<T extends MiddlewareParamName> = T extends ke
 /**
  * Generate default types when no injectable modules exist
  */
-function generateDefaultTypes() {	const typeDefinition = `// Auto-generated file - DO NOT EDIT MANUALLY
+function generateDefaultTypes(outputPath) {	const typeDefinition = `// Auto-generated file - DO NOT EDIT MANUALLY
 // Generated on: ${new Date().toISOString()}
 // Source: src/app/injectable/
 
@@ -586,8 +588,6 @@ export type GetMiddlewareType<T extends MiddlewareName> = T extends keyof Middle
 // Helper type for getting middleware parameter type by name
 export type GetMiddlewareParamType<T extends MiddlewareParamName> = T extends keyof MiddlewareParams ? MiddlewareParams[T] : never;
 `;
-
-	const outputPath = path.join(process.cwd(), 'src', 'core', 'generated-injectable-types.ts');
 
 	// Ensure directory exists
 	const outputDir = path.dirname(outputPath);

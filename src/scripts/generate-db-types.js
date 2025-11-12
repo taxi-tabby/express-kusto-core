@@ -4,24 +4,29 @@ const path = require('path');
 /**
  * Generate TypeScript types based on databases in src/app/db folder
  */
-function generateDatabaseTypes() {
-  const dbPath = path.join(process.cwd(), 'src', 'app', 'db');
+function generateDatabaseTypes(dbPath = './src/app/db', outputDir = './src/core') {
+  const dbPathAbsolute = path.join(process.cwd(), dbPath);
+  const outputDirPath = path.join(process.cwd(), outputDir);
+  const outputPath = path.join(outputDirPath, 'generated-db-types.ts');
+
+  // Calculate relative path from output file to db directory
+  const relativePathToDb = path.relative(outputDirPath, dbPathAbsolute).replace(/\\/g, '/');
   
-  if (!fs.existsSync(dbPath)) {
-    console.error('Database directory not found:', dbPath);
+  if (!fs.existsSync(dbPathAbsolute)) {
+    console.error('Database directory not found:', dbPathAbsolute);
     return;
   }
 
   // Get all database folders
-  const dbFolders = fs.readdirSync(dbPath, { withFileTypes: true })
+  const dbFolders = fs.readdirSync(dbPathAbsolute, { withFileTypes: true })
     .filter(dirent => dirent.isDirectory())
     .map(dirent => dirent.name);
 
   console.log('Found databases:', dbFolders);
 
-  // Generate type imports
+  // Generate type imports (using relative paths)
   const typeImports = dbFolders.map(dbName => 
-    `type ${capitalize(dbName)}Client = typeof import('@app/db/${dbName}/client')['PrismaClient'];`
+    `type ${capitalize(dbName)}Client = typeof import('${relativePathToDb}/${dbName}/client')['PrismaClient'];`
   ).join('\n');
 
   // Generate instance types
@@ -59,7 +64,7 @@ ${getClientOverloads}
 
   // Generate the complete type file
   const typeFileContent = `// Auto-generated file - Do not edit manually
-// Generated from src/app/db folder structure
+// Generated from ${dbPath || 'src/app/db'} folder structure
 
 /**
  * Import actual Prisma client types from each database
@@ -116,12 +121,9 @@ ${classExtension}
 `;
 
   // Write the generated types to a file
-  const outputPath = path.join(process.cwd(), 'src', 'core', 'generated-db-types.ts');
-  
   // Ensure directory exists
-  const outputDir = path.dirname(outputPath);
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
+  if (!fs.existsSync(outputDirPath)) {
+    fs.mkdirSync(outputDirPath, { recursive: true });
   }
 
   fs.writeFileSync(outputPath, typeFileContent);

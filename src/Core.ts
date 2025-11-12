@@ -10,7 +10,7 @@ import expressApp from './lib/expressAppSingleton';
 import { DocumentationGenerator } from './lib/documentationGenerator';
 import { StaticFileMiddleware } from './lib/staticFileMiddleware';
 import { prismaManager } from './lib/prismaManager';
-import { DependencyInjector } from './lib/dependencyInjector';
+import { DependencyInjector, DependencyInjectorConfig } from './lib/dependencyInjector';
 import { repositoryManager } from './lib/repositoryManager';
 import { SchemaApiSetup } from './lib/schemaApiSetup';
 
@@ -56,6 +56,9 @@ export interface CoreConfig {
     
     /** Whether to trust proxy headers (default: true) */
     trustProxy?: boolean;
+    
+    /** Dependency injector configuration */
+    dependencyInjector?: DependencyInjectorConfig;
 }
 
 export class Core {
@@ -92,7 +95,8 @@ export class Core {
             viewEngine: 'ejs',
             port: parseInt(process.env.PORT || '3000'),
             host: process.env.HOST || '0.0.0.0',
-            trustProxy: process.env.TRUST_PROXY === 'true' || true
+            trustProxy: process.env.TRUST_PROXY === 'true' || true,
+            dependencyInjector: {}
         };
     }    
     
@@ -124,7 +128,8 @@ export class Core {
                 viewEngine: customConfig.viewEngine || this._config.viewEngine,
                 port: customConfig.port !== undefined ? customConfig.port : this._config.port,
                 host: customConfig.host || this._config.host,
-                trustProxy: customConfig.trustProxy !== undefined ? customConfig.trustProxy : this._config.trustProxy
+                trustProxy: customConfig.trustProxy !== undefined ? customConfig.trustProxy : this._config.trustProxy,
+                dependencyInjector: customConfig.dependencyInjector || this._config.dependencyInjector
             };
         }              // Initialize PrismaManager before setting up routes
         await this.initializePrismaManager();
@@ -478,7 +483,7 @@ export class Core {
     private async initializeDependencyInjector(): Promise<void> {
         try {
             log.Info('💉 Initializing Dependency Injector...');
-            await DependencyInjector.getInstance().initialize();
+            await DependencyInjector.getInstance().initialize(this._config.dependencyInjector);
             log.Info('Dependency Injector initialization complete');
         } catch (error) {
             log.Error('Failed to initialize Dependency Injector', { error });

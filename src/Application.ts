@@ -2,6 +2,15 @@ import { Express } from 'express';
 import { Server } from 'http';
 import { Core, CoreConfig } from './Core';
 import { log } from './external/winston';
+import { DependencyInjectorConfig } from './lib/dependencyInjector';
+
+/**
+ * Extended configuration for Application class
+ */
+export interface ApplicationConfig extends CoreConfig {
+    /** Dependency injector configuration with registries */
+    dependencyInjector?: DependencyInjectorConfig;
+}
 
 /**
  * Application class - Simple and intuitive interface for the core functionality
@@ -88,9 +97,9 @@ import { log } from './external/winston';
  */
 export class Application {
     private core: Core;
-    private config: Partial<CoreConfig>;
+    private config: Partial<ApplicationConfig>;
 
-    constructor(config?: Partial<CoreConfig>) {
+    constructor(config?: Partial<ApplicationConfig>) {
         this.core = Core.getInstance();
         this.config = config || {};
     }    

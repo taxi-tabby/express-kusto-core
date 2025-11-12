@@ -1,5 +1,15 @@
 import { log } from '../external/winston';
-import { Injectable, Middleware, MODULE_REGISTRY, MIDDLEWARE_REGISTRY, ModuleName, MiddlewareName } from './types/generated-injectable-types';
+
+// Default types (will be overridden by actual project types)
+import type { Injectable, Middleware, ModuleName, MiddlewareName } from './types/generated-injectable-types';
+
+/**
+ * Registry configuration that should be passed from the actual project
+ */
+export interface DependencyInjectorConfig {
+    moduleRegistry?: Record<string, () => Promise<any>>;
+    middlewareRegistry?: Record<string, () => Promise<any>>;
+}
 
 export class DependencyInjector {
     private static instance: DependencyInjector;
@@ -17,16 +27,24 @@ export class DependencyInjector {
     }
 
     /**
-     * Initialize the dependency injector by loading all modules from the module registry
+     * Initialize the dependency injector with registries from the actual project
+     * @param config Configuration containing module and middleware registries
      */
-    public async initialize(): Promise<void> {
+    public async initialize(config?: DependencyInjectorConfig): Promise<void> {
         if (this.initialized) {
             return;
-        }        try {
-            await this.loadModules();
-            await this.loadMiddlewares();
+        }
+        
+        try {
+            const moduleRegistry = config?.moduleRegistry || {};
+            const middlewareRegistry = config?.middlewareRegistry || {};
+            
+            log.Info(`📂 Initializing with ${Object.keys(moduleRegistry).length} modules and ${Object.keys(middlewareRegistry).length} middlewares`);
+            
+            await this.loadModules(moduleRegistry);
+            await this.loadMiddlewares(middlewareRegistry);
             this.initialized = true;
-            log.Info(`Dependency injection initialized with ${Object.keys(this.modules).length} modules and ${Object.keys(this.middlewares).length} middlewares`);
+            log.Info(`✅ Dependency injection initialized with ${Object.keys(this.modules).length} modules and ${Object.keys(this.middlewares).length} middlewares`);
         } catch (error) {
             log.Error('Failed to initialize dependency injection:', error);
             throw error;
@@ -37,17 +55,23 @@ export class DependencyInjector {
     /**
      * Load all modules from the module registry
      */
-    private async loadModules(): Promise<void> {
-        const moduleNames = Object.keys(MODULE_REGISTRY) as ModuleName[];
+    private async loadModules(moduleRegistry: Record<string, () => Promise<any>>): Promise<void> {
+        const moduleNames = Object.keys(moduleRegistry) as string[];
+        
+        if (moduleNames.length === 0) {
+            log.Warn('⚠️ MODULE_REGISTRY is empty. No injectable modules found.');
+            log.Warn(`Make sure to run the code generation script to create generated-injectable-types.ts`);
+            return;
+        }
 
         for (const moduleName of moduleNames) {
             try {
                 // Dynamic import using the module registry
-                const moduleLoader = MODULE_REGISTRY[moduleName];
+                const moduleLoader = moduleRegistry[moduleName];
                 
                 // Skip if module loader is not found
                 if (!moduleLoader) {
-                    log.warn(`⚠️ Module loader not found for: ${moduleName}, skipping...`);
+                    log.Warn(`⚠️ Module loader not found for: ${moduleName}, skipping...`);
                     continue;
                 }
                 
@@ -62,7 +86,7 @@ export class DependencyInjector {
                     // Already instantiated object or module
                     this.modules[moduleName] = ModuleClass;
                 } else {
-                    log.warn(`Module ${moduleName} resolved to unexpected type: ${typeof ModuleClass}`);
+                    log.Warn(`Module ${moduleName} resolved to unexpected type: ${typeof ModuleClass}`);
                     this.modules[moduleName] = ModuleClass;
                 }
 
@@ -77,8 +101,8 @@ export class DependencyInjector {
     /**
      * Load all middlewares from the middleware registry
      */
-    private async loadMiddlewares(): Promise<void> {
-        const middlewareNames = Object.keys(MIDDLEWARE_REGISTRY) as MiddlewareName[];
+    private async loadMiddlewares(middlewareRegistry: Record<string, () => Promise<any>>): Promise<void> {
+        const middlewareNames = Object.keys(middlewareRegistry) as string[];
         
         log.Info(`🔧 Loading ${middlewareNames.length} middlewares: ${middlewareNames.join(', ')}`);
 
@@ -87,11 +111,11 @@ export class DependencyInjector {
                 log.Debug(`Loading middleware: ${middlewareName}`);
                 
                 // Dynamic import using the middleware registry
-                const middlewareLoader = MIDDLEWARE_REGISTRY[middlewareName];
+                const middlewareLoader = middlewareRegistry[middlewareName];
                 
                 // Skip if middleware loader is not found
                 if (!middlewareLoader) {
-                    log.warn(`⚠️ Middleware loader not found for: ${middlewareName}, skipping...`);
+                    log.Warn(`⚠️ Middleware loader not found for: ${middlewareName}, skipping...`);
                     continue;
                 }
                 
@@ -109,7 +133,7 @@ export class DependencyInjector {
                     this.middlewares[middlewareName] = MiddlewareFunction();
                     log.Debug(`Executed middleware function for ${middlewareName}, result:`, typeof this.middlewares[middlewareName]);
                 } else {
-                    log.warn(`Middleware ${middlewareName} resolved to unexpected type: ${typeof MiddlewareFunction}`);
+                    log.Warn(`Middleware ${middlewareName} resolved to unexpected type: ${typeof MiddlewareFunction}`);
                     this.middlewares[middlewareName] = MiddlewareFunction;
                 }
 
@@ -128,7 +152,8 @@ export class DependencyInjector {
      */
     public getInjectedModules(): Injectable {
         if (!this.initialized) {
-            throw new Error('Dependency injector not initialized. Call initialize() first.');
+            log.Warn('⚠️ Dependency injector not initialized. Returning empty modules object.');
+            return {} as Injectable;
         }
 
         return this.modules as Injectable;
