@@ -20,6 +20,34 @@ import { log } from './external/winston';
  * ```
  * 
  * @example
+ * With type inference for IntelliSense
+ * ```typescript
+ * import { Application } from '@kusto/core';
+ * import type { Injectable } from './app/injectables/types/generated-injectable-types';
+ * import type { RepositoryTypeMap } from './app/repositories/types/generated-repository-types';
+ * import type { DatabaseClientMap } from './app/db/types/generated-db-types';
+ * 
+ * const app = new Application({
+ *   port: 3000,
+ *   basePath: './src/app',
+ *   types: {
+ *     injectable: {} as Injectable,
+ *     repositories: {} as RepositoryTypeMap,
+ *     databases: {} as DatabaseClientMap
+ *   }
+ * });
+ * 
+ * await app.start();
+ * 
+ * // Now in your routes, you'll get full IntelliSense:
+ * // router.GET((req, res, injected, repo, db) => {
+ * //   injected.authService  // ✅ Autocomplete works!
+ * //   repo.getRepository('userRepository')  // ✅ Type-safe!
+ * //   db.wrap('main')  // ✅ IntelliSense enabled!
+ * // });
+ * ```
+ * 
+ * @example
  * Custom base path (all sub-paths will be relative to basePath)
  * ```typescript
  * const app = new Application({
@@ -45,18 +73,6 @@ import { log } from './external/winston';
  * });
  * 
  * await app.start();
- * ```
- * 
- * @example
- * Mix of basePath and custom paths
- * ```typescript
- * const app = new Application({
- *   basePath: './src/app',               // Default for unspecified paths
- *   routesPath: './custom/routes',       // Override routes path
- *   dbPath: './database/schemas',        // Override db path
- *   // viewsPath will use basePath: ./src/app/views
- *   port: 3000
- * });
  * ```
  * 
  * @example

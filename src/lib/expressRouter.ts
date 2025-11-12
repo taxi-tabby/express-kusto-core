@@ -16,12 +16,48 @@ import { ERROR_CODES, getHttpStatusForErrorCode } from './errorCodes';
 import { CrudSchemaRegistry } from './crudSchemaRegistry';
 import { PrismaSchemaAnalyzer } from './prismaSchemaAnalyzer';
 import './types/express-extensions';
+import { KustoConfigurableTypes, GetInjectable, GetRepositoryManager, GetPrismaManager } from './types/configurable-types';
 
 
-export type HandlerFunction = (req: Request, res: Response, injected: Injectable, repo: typeof repositoryManager, db: typeof prismaManager) => void;
-export type ValidatedHandlerFunction<TConfig extends RequestConfig = RequestConfig> = (req: ValidatedRequest<TConfig>, res: Response, injected: Injectable, repo: typeof repositoryManager, db: typeof prismaManager) => Promise<any> | any;
-export type MiddlewareHandlerFunction = (req: Request, res: Response, next: NextFunction, injected: Injectable, repo: typeof repositoryManager, db: typeof prismaManager) => void;
-export type ValidatedMiddlewareHandlerFunction<TConfig extends RequestConfig = RequestConfig> = (req: ValidatedRequest<TConfig>, res: Response, next: NextFunction, injected: Injectable, repo: typeof repositoryManager, db: typeof prismaManager) => Promise<any> | any;
+export type HandlerFunction<T extends KustoConfigurableTypes = KustoConfigurableTypes> = (
+    req: Request, 
+    res: Response, 
+    injected: GetInjectable<T>, 
+    repo: GetRepositoryManager<T>, 
+    db: GetPrismaManager<T>
+) => void;
+
+export type ValidatedHandlerFunction<
+    TConfig extends RequestConfig = RequestConfig,
+    T extends KustoConfigurableTypes = KustoConfigurableTypes
+> = (
+    req: ValidatedRequest<TConfig>, 
+    res: Response, 
+    injected: GetInjectable<T>, 
+    repo: GetRepositoryManager<T>, 
+    db: GetPrismaManager<T>
+) => Promise<any> | any;
+
+export type MiddlewareHandlerFunction<T extends KustoConfigurableTypes = KustoConfigurableTypes> = (
+    req: Request, 
+    res: Response, 
+    next: NextFunction, 
+    injected: GetInjectable<T>, 
+    repo: GetRepositoryManager<T>, 
+    db: GetPrismaManager<T>
+) => void;
+
+export type ValidatedMiddlewareHandlerFunction<
+    TConfig extends RequestConfig = RequestConfig,
+    T extends KustoConfigurableTypes = KustoConfigurableTypes
+> = (
+    req: ValidatedRequest<TConfig>, 
+    res: Response, 
+    next: NextFunction, 
+    injected: GetInjectable<T>, 
+    repo: GetRepositoryManager<T>, 
+    db: GetPrismaManager<T>
+) => Promise<any> | any;
 
 /**
  * Extract model names from a Prisma client type

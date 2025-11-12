@@ -86,6 +86,11 @@ export { TestGenerator } from './lib/testGenerator';
 export { RelationshipConfigManager, RelationshipPattern, ManyToManyConfig } from './lib/relationshipConfig';
 
 // ============================================
+// Type Augmentation Support
+// ============================================
+export type { KustoConfigurableTypes, GetInjectable, GetRepositoryManager, GetPrismaManager } from './lib/types/configurable-types';
+
+// ============================================
 // External utilities
 // ============================================
 export { log, logger } from './external/winston';

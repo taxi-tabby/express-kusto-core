@@ -56,6 +56,31 @@ export interface CoreConfig {
     
     /** Whether to trust proxy headers (default: true) */
     trustProxy?: boolean;
+    
+    /** 
+     * Type definitions for type inference
+     * Import your generated types to enable IntelliSense
+     * 
+     * @example
+     * ```typescript
+     * import type { Injectable } from './app/injectables/types/generated-injectable-types';
+     * import type { RepositoryTypeMap } from './app/repositories/types/generated-repository-types';
+     * import type { DatabaseClientMap } from './app/db/types/generated-db-types';
+     * 
+     * const app = new Application({
+     *   types: {
+     *     injectable: {} as Injectable,
+     *     repositories: {} as RepositoryTypeMap,
+     *     databases: {} as DatabaseClientMap
+     *   }
+     * });
+     * ```
+     */
+    types?: {
+        injectable?: any;
+        repositories?: any;
+        databases?: any;
+    };
 }
 
 export class Core {
@@ -92,7 +117,8 @@ export class Core {
             viewEngine: 'ejs',
             port: parseInt(process.env.PORT || '3000'),
             host: process.env.HOST || '0.0.0.0',
-            trustProxy: process.env.TRUST_PROXY === 'true' || true
+            trustProxy: process.env.TRUST_PROXY === 'true' || true,
+            types: {}
         };
     }    
     
@@ -124,7 +150,8 @@ export class Core {
                 viewEngine: customConfig.viewEngine || this._config.viewEngine,
                 port: customConfig.port !== undefined ? customConfig.port : this._config.port,
                 host: customConfig.host || this._config.host,
-                trustProxy: customConfig.trustProxy !== undefined ? customConfig.trustProxy : this._config.trustProxy
+                trustProxy: customConfig.trustProxy !== undefined ? customConfig.trustProxy : this._config.trustProxy,
+                types: customConfig.types || this._config.types
             };
         }              // Initialize PrismaManager before setting up routes
         await this.initializePrismaManager();
