@@ -14,7 +14,9 @@ export const REPOSITORY_REGISTRY = {
 } as const;
 
 // Repository names type
-export type RepositoryName = keyof typeof REPOSITORY_REGISTRY;
+// Allows string when no repositories are registered to support user project repositories
+export type RepositoryName = keyof typeof REPOSITORY_REGISTRY extends never ? string : keyof typeof REPOSITORY_REGISTRY;
 
 // Helper type for getting repository type by name
-export type GetRepositoryType<T extends RepositoryName> = T extends keyof RepositoryTypeMap ? RepositoryTypeMap[T] : never;
+// Returns 'any' instead of 'never' when repository type is not found to allow user project types
+export type GetRepositoryType<T extends RepositoryName> = T extends keyof RepositoryTypeMap ? RepositoryTypeMap[T] : any;

@@ -1,6 +1,10 @@
 import { log } from '../external/winston';
 import { REPOSITORY_REGISTRY, RepositoryName, GetRepositoryType } from './types/generated-repository-types';
 import { PrismaManager } from './prismaManager';
+import type { GetRepositoryManager } from './types/configurable-types';
+
+// Augmented repository type map from user project
+type AugmentedRepositoryTypeMap = GetRepositoryManager extends Record<string, any> ? GetRepositoryManager : {};
 
 export class RepositoryManager {
     private static instance: RepositoryManager;
@@ -46,7 +50,7 @@ export class RepositoryManager {
         for (const repositoryName of repositoryNames) {
             try {
                 // Dynamic import using the repository registry
-                const repositoryLoader = REPOSITORY_REGISTRY[repositoryName];
+                const repositoryLoader = (REPOSITORY_REGISTRY as any)[repositoryName];
                 
                 // Skip if repository loader is not found
                 if (!repositoryLoader) {
@@ -105,8 +109,9 @@ export class RepositoryManager {
             .join('');
     }    /**
      * Get a repository instance by name
+     * Uses augmented types from user project if available
      */
-    public getRepository<T extends RepositoryName>(name: T): GetRepositoryType<T> {
+    public getRepository<T extends RepositoryName>(name: T): GetRepositoryType<T> | (T extends keyof AugmentedRepositoryTypeMap ? AugmentedRepositoryTypeMap[T] : any) {
         if (!this.initialized) {
             throw new Error('Repository manager not initialized. Call initialize() first.');
         }
@@ -116,7 +121,7 @@ export class RepositoryManager {
             throw new Error(`Repository ${name} not found`);
         }
 
-        return repository as GetRepositoryType<T>;
+        return repository as any;
     }
 
     /**
@@ -140,7 +145,7 @@ export class RepositoryManager {
         try {
             delete this.repositories[name];
             
-            const repositoryLoader = REPOSITORY_REGISTRY[name];
+            const repositoryLoader = (REPOSITORY_REGISTRY as any)[name];
             if (!repositoryLoader) {
                 throw new Error(`Repository ${name} not found in registry`);
             }
