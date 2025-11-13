@@ -4,6 +4,7 @@ import { prismaManager } from './prismaManager';
 import { Injectable } from './types/generated-injectable-types';
 import { RepositoryTypeMap, RepositoryName } from './types/generated-repository-types';
 import { PrismaManagerClientOverloads, DatabaseNamesUnion, DatabaseClientType } from './types/generated-db-types';
+import { GetInjectable, GetRepositoryManager } from './types/configurable-types';
 
 
 
@@ -168,15 +169,15 @@ export class KustoManager {
     /**
      * 특정 모듈 가져오기
      */
-    public getModule<T extends keyof Injectable>(name: T): Injectable[T] | undefined {
+    public getModule<T extends keyof GetInjectable>(name: T): GetInjectable[T] | undefined {
         return this.dependencyInjector.getModule(name);
     }
 
     /**
      * 특정 레포지토리 가져오기
      */
-    public getRepository<T extends keyof RepositoryTypeMap>(name: T): RepositoryTypeMap[T] {
-        return repositoryManager.getRepository(name as RepositoryName) as RepositoryTypeMap[T];
+    public getRepository<T extends keyof GetRepositoryManager>(name: T): GetRepositoryManager[T] {
+        return repositoryManager.getRepository(name as RepositoryName) as GetRepositoryManager[T];
     }
 
     /**

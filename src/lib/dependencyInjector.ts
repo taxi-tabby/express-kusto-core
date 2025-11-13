@@ -2,6 +2,7 @@ import { log } from '../external/winston';
 
 // Default types (will be overridden by actual project types)
 import type { Injectable, Middleware, ModuleName, MiddlewareName } from './types/generated-injectable-types';
+import { GetInjectable } from './types/configurable-types';
 
 /**
  * Registry configuration that should be passed from the actual project
@@ -173,8 +174,8 @@ export class DependencyInjector {
     /**
      * Get a specific module by name
      */
-    public getModule<T extends ModuleName>(name: T): Injectable[T] | undefined {
-        return this.modules[name];
+    public getModule<T extends keyof GetInjectable>(name: T): GetInjectable[T] | undefined {
+        return this.modules[name as string];
     }    
     
     

@@ -7,13 +7,16 @@
  * @example
  * In your project, create a file (e.g., `src/types/kusto-types.d.ts`):
  * ```typescript
- * import type { Injectable } from '../core/generated-injectable-types';
+ * import type { Injectable, Middleware, MiddlewareParams, MIDDLEWARE_PARAM_MAPPING } from '../core/generated-injectable-types';
  * import type { RepositoryTypeMap } from '../core/generated-repository-types';
  * import type { DatabaseClientMap } from '../core/generated-db-types';
  * 
  * declare module 'kusto-framework-core' {
  *   interface KustoConfigurableTypes {
  *     injectable: Injectable;
+ *     middleware: Middleware;
+ *     middlewareParams: MiddlewareParams;
+ *     middlewareParamMapping: typeof MIDDLEWARE_PARAM_MAPPING;
  *     repositoryTypeMap: RepositoryTypeMap;
  *     databaseClientMap: DatabaseClientMap;
  *   }
@@ -36,6 +39,35 @@ export interface KustoConfigurableTypes {}
 export type GetInjectable = KustoConfigurableTypes extends { injectable: infer T } 
     ? T 
     : {};
+
+export type GetMiddleware = KustoConfigurableTypes extends { middleware: infer T } 
+    ? T 
+    : {};
+
+export type GetMiddlewareParams = KustoConfigurableTypes extends { middlewareParams: infer T } 
+    ? T 
+    : {};
+
+/**
+ * Middleware parameter mapping type
+ * Maps middleware names to their parameter keys
+ */
+export type GetMiddlewareParamMapping = KustoConfigurableTypes extends { middlewareParamMapping: infer T }
+    ? T
+    : {};
+
+/**
+ * Helper type to extract middleware parameter type for a specific middleware name
+ * First checks if there's a mapping, then falls back to direct key lookup
+ */
+export type GetMiddlewareParamFor<T> = 
+    T extends keyof GetMiddlewareParamMapping
+        ? GetMiddlewareParamMapping[T] extends keyof GetMiddlewareParams
+            ? GetMiddlewareParams[GetMiddlewareParamMapping[T]]
+            : undefined
+        : T extends keyof GetMiddlewareParams 
+            ? GetMiddlewareParams[T] 
+            : undefined;
     
 export type GetRepositoryManager = KustoConfigurableTypes extends { repositoryTypeMap: infer T } 
     ? T 

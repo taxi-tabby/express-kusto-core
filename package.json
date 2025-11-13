@@ -1,6 +1,6 @@
 {
   "name": "kusto-framework-core",
-  "version": "1.1.0",
+  "version": "1.1.11",
   "description": "Express.js core library with Prisma integration, validation, and schema API",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

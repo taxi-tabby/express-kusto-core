@@ -16,7 +16,7 @@ import { ERROR_CODES, getHttpStatusForErrorCode } from './errorCodes';
 import { CrudSchemaRegistry } from './crudSchemaRegistry';
 import { PrismaSchemaAnalyzer } from './prismaSchemaAnalyzer';
 import './types/express-extensions';
-import { KustoConfigurableTypes, GetInjectable, GetRepositoryManager, GetPrismaManager } from './types/configurable-types';
+import { KustoConfigurableTypes, GetInjectable, GetRepositoryManager, GetPrismaManager, GetMiddleware, GetMiddlewareParams, GetMiddlewareParamFor } from './types/configurable-types';
 
 
 export type HandlerFunction = (
@@ -1141,22 +1141,14 @@ export class ExpressRouter {
      * @returns ExpressRouter 인스턴스
      */
 
-    public WITH<T extends MiddlewareName>(
-        middlewareName: T
-    ): ExpressRouter;
-
-    public WITH<T extends MiddlewareName>(
+    /**
+     * Apply middleware to this router
+     * @param middlewareName - Name of the middleware from GetMiddleware
+     * @param params - Optional parameters if middleware requires them (from GetMiddlewareParams)
+     */
+    public WITH<T extends keyof GetMiddleware>(
         middlewareName: T,
-        ...args: T extends keyof typeof MIDDLEWARE_PARAM_MAPPING 
-            ? [params: MiddlewareParams[typeof MIDDLEWARE_PARAM_MAPPING[T]]]
-            : [params?: never]
-    ): ExpressRouter;
-
-    public WITH<T extends MiddlewareName>(
-        middlewareName: T,
-        params?: T extends keyof typeof MIDDLEWARE_PARAM_MAPPING 
-            ? MiddlewareParams[typeof MIDDLEWARE_PARAM_MAPPING[T]]
-            : never
+        params?: GetMiddlewareParamFor<T>
     ): ExpressRouter {
 
         try {
