@@ -507,6 +507,23 @@ ${middlewareProperties}
   interface MiddlewareParams {
 ${middlewareParamProperties || '    // No middleware parameters'}
   }
+  
+  // Middleware parameter mapping interface
+  interface MiddlewareParamMapping {
+${Object.entries(middlewareParamMapping).length > 0 
+  ? Object.entries(middlewareParamMapping)
+      .map(([middlewareName, paramName]) => `    '${middlewareName}': '${paramName}';`)
+      .join('\n')
+  : '    // No middleware parameter mappings'}
+  }
+
+  // Augment KustoConfigurableTypes for type inference
+  interface KustoConfigurableTypes {
+    injectable: Injectable;
+    middleware: Middleware;
+    middlewareParams: MiddlewareParams;
+    middlewareParamMapping: MiddlewareParamMapping;
+  }
 }
 
 // Module names type
@@ -581,6 +598,20 @@ declare module 'kusto-framework-core' {
   interface MiddlewareParams {
     // No middleware parameter interfaces found
     // Add *.middleware.interface.ts files to src/app/injectable/ and regenerate types
+  }
+  
+  // Middleware parameter mapping interface (empty)
+  interface MiddlewareParamMapping {
+    // No middleware parameter mappings found
+    // Add *.middleware.interface.ts files to src/app/injectable/ and regenerate types
+  }
+
+  // Augment KustoConfigurableTypes for type inference (empty)
+  interface KustoConfigurableTypes {
+    injectable: Injectable;
+    middleware: Middleware;
+    middlewareParams: MiddlewareParams;
+    middlewareParamMapping: MiddlewareParamMapping;
   }
 }
 

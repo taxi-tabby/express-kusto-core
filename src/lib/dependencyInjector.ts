@@ -174,7 +174,7 @@ export class DependencyInjector {
     /**
      * Get a specific module by name
      */
-    public getModule<T extends keyof GetInjectable>(name: T): GetInjectable[T] | undefined {
+    public getModule<T extends keyof GetInjectable extends never ? string : keyof GetInjectable>(name: T): any | undefined {
         return this.modules[name as string];
     }    
     
@@ -182,7 +182,7 @@ export class DependencyInjector {
     /**
      * Get a specific middleware by name
      */
-    public getMiddleware<T extends MiddlewareName>(name: T): Middleware[T] | undefined {
+    public getMiddleware<T extends keyof Middleware extends never ? string : MiddlewareName>(name: T): any | undefined {
         log.Debug(`Getting middleware '${name}', available middlewares: [${Object.keys(this.middlewares).join(', ')}]`);
         const middleware = this.middlewares[name];
         log.Debug(`Middleware '${name}' found: ${middleware !== undefined}, type: ${typeof middleware}`);

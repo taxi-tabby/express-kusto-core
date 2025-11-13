@@ -3,11 +3,10 @@ import { createProxyMiddleware, Options } from 'http-proxy-middleware';
 import multer from 'multer';
 import { DocumentationGenerator } from './documentationGenerator';
 import { RequestHandler as CustomRequestHandler, RequestConfig, ResponseConfig, ValidatedRequest } from './requestHandler';
-import { Injectable, MiddlewareName, MiddlewareParams, MIDDLEWARE_PARAM_MAPPING } from './types/generated-injectable-types';
+import { Injectable, Middleware, MiddlewareName, MiddlewareParams, MiddlewareParamMapping } from './types/generated-injectable-types';
 import { RepositoryTypeMap } from './types/generated-repository-types';
 import { DatabaseClientMap } from './types/generated-db-types';
 import { KustoDbProxy } from './kustoManager';
-import { GetMiddleware, GetMiddlewareParamFor } from './types/configurable-types';
 import { DependencyInjector } from './dependencyInjector';
 import { prismaManager } from './prismaManager'
 import { repositoryManager } from './repositoryManager'
@@ -18,6 +17,7 @@ import { serializeBigInt, serialize } from './serializer';
 import { ERROR_CODES, getHttpStatusForErrorCode } from './errorCodes';
 import { CrudSchemaRegistry } from './crudSchemaRegistry';
 import { PrismaSchemaAnalyzer } from './prismaSchemaAnalyzer';
+import { GetMiddlewareParamFor } from './types/configurable-types';
 import './types/express-extensions';
 
 
@@ -1145,27 +1145,28 @@ export class ExpressRouter {
 
     /**
      * Apply middleware to this router
-     * @param middlewareName - Name of the middleware from GetMiddleware
-     * @param params - Optional parameters if middleware requires them (from GetMiddlewareParams)
+     * @param middlewareName - Name of the middleware from Middleware interface
+     * @param params - Optional parameters if middleware requires them (from MiddlewareParams)
      */
-    public WITH<T extends keyof GetMiddleware>(
+    public WITH<T extends keyof Middleware extends never ? string : keyof Middleware>(
         middlewareName: T,
         params?: GetMiddlewareParamFor<T>
     ): ExpressRouter {
 
         try {
             const injector = DependencyInjector.getInstance();
-            const middlewareInstance = injector.getMiddleware(middlewareName);
+            // Type assertion needed when Middleware is empty
+            const middlewareInstance = injector.getMiddleware(middlewareName as MiddlewareName);
             
 
             if (!middlewareInstance) {
-                throw new Error(`Middleware '${middlewareName}' not found in dependency injector`);
+                throw new Error(`Middleware '${String(middlewareName)}' not found in dependency injector`);
             }            
             
-            // 미들웨어 이름을 파라미터 키로 변환하는 헬퍼 함수 (정적 매핑 적용)
+            // 미들웨어 파라미터 키는 middleware name과 동일하게 사용
+            // 사용자 프로젝트에서 MiddlewareParamMapping을 augmentation하면 타입 힌트가 제공됩니다
             const getParameterKey = (middlewareName: string): string => {
-                // 정적 매핑에서 파라미터 키 조회
-                return MIDDLEWARE_PARAM_MAPPING[middlewareName as keyof typeof MIDDLEWARE_PARAM_MAPPING] || middlewareName;
+                return middlewareName; // 타입 시스템에서 자동으로 매핑됨
             };
 
             // 미들웨어 인스턴스의 모든 메서드를 Express 미들웨어로 변환하여 적용
@@ -1189,7 +1190,7 @@ export class ExpressRouter {
                                     
                                     // 파라미터가 있다면 req 객체에 추가
                                     if (params) {
-                                        const parameterKey = getParameterKey(middlewareName);
+                                        const parameterKey = getParameterKey(String(middlewareName));
                                         (req as any).with = { 
                                             ...(req as any).with, 
                                             [parameterKey]: params 
@@ -1220,7 +1221,7 @@ export class ExpressRouter {
                             
                             // 파라미터가 있다면 req 객체에 추가
                             if (params) {
-                                const parameterKey = getParameterKey(middlewareName);
+                                const parameterKey = getParameterKey(String(middlewareName));
                                 (req as any).with = { 
                                     ...(req as any).with, 
                                     [parameterKey]: params 
@@ -1237,7 +1238,7 @@ export class ExpressRouter {
             return this;
             
         } catch (error) {
-            console.error(`Error applying middleware '${middlewareName}':`, error);
+            console.error(`Error applying middleware '${String(middlewareName)}':`, error);
             throw error;
         }
     }
@@ -2307,7 +2308,7 @@ export class ExpressRouter {
      * @param options CRUD 옵션 설정
      */
     public CRUD<
-        T extends string,
+        T extends keyof DatabaseClientMap extends never ? string : keyof DatabaseClientMap & string,
         M extends ModelNamesFor<T> = ModelNamesFor<T>
     >(
         databaseName: T, 

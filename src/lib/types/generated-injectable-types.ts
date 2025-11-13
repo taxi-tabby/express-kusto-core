@@ -20,6 +20,13 @@ export interface MiddlewareParams {
   // Add *.middleware.interface.ts files to src/app/injectable/ and regenerate types
 }
 
+// Middleware parameter mapping interface (empty - will be augmented by user project)
+// Maps middleware names to their parameter interface names
+// Example: { 'authRateLimiterDefault': 'authRateLimiterOption' }
+export interface MiddlewareParamMapping {
+  // Will be augmented by user project's generated types
+}
+
 // Module registry for dynamic loading
 export const MODULE_REGISTRY = {
   // 'testMath': () => import('@app/injectable/test/math.module'),

@@ -50,7 +50,7 @@ export type GetMiddlewareParams = KustoConfigurableTypes extends { middlewarePar
 
 /**
  * Middleware parameter mapping type
- * Maps middleware names to their parameter keys
+ * Extracts the mapping interface from KustoConfigurableTypes
  */
 export type GetMiddlewareParamMapping = KustoConfigurableTypes extends { middlewareParamMapping: infer T }
     ? T
@@ -58,9 +58,11 @@ export type GetMiddlewareParamMapping = KustoConfigurableTypes extends { middlew
 
 /**
  * Helper type to extract middleware parameter type for a specific middleware name
- * First checks if there's a mapping, then falls back to direct key lookup
+ * Step 1: Check if T is in the mapping
+ * Step 2: Get the mapped parameter key
+ * Step 3: Look up that key in MiddlewareParams
  */
-export type GetMiddlewareParamFor<T> = 
+export type GetMiddlewareParamFor<T extends string> = 
     T extends keyof GetMiddlewareParamMapping
         ? GetMiddlewareParamMapping[T] extends keyof GetMiddlewareParams
             ? GetMiddlewareParams[GetMiddlewareParamMapping[T]]
