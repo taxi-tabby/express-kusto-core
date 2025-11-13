@@ -1237,21 +1237,27 @@ function showGeneralHelp(lang: 'en' | 'ko') {
                 { cmd: 'debug', desc: 'Show debug information for troubleshooting' },
                 { cmd: 'help', desc: 'Show this help or help for specific commands' }
             ],            quickExamples: [
-                'kusto-db list                              # Show all databases',
-                'kusto-db migrate -d testdb1 -t dev -n "initial_migration"  # Create first migration',
-                'kusto-db migrate -d testdb1 -t status     # Check migration status',
-                'kusto-db rollback -d testdb1 --list       # List migrations for rollback',
-                'kusto-db rollback -d testdb1 -t 2 --preview  # Preview rollback to migration #2',
-                'kusto-db pull -d testdb1                  # Pull schema from database (DANGEROUS)',
-                'kusto-db push -d testdb1                  # Push schema to database (DANGEROUS)',
-                'kusto-db seed -d testdb1                  # Run database seeding (direct seed.ts)',
-                'kusto-db seed -d testdb1 --prisma        # Run database seeding (Prisma command)',
-                'kusto-db execute -d testdb1 -c "SELECT * FROM users"  # Execute SQL',
-                'kusto-db validate -a                      # Validate all schemas',
-                'kusto-db generate -a                      # Generate all clients',
-                'kusto-db studio -d testdb1                # Open database studio',
-                'kusto-db version                          # Show Prisma version',
-                'kusto-db debug -d testdb1                 # Show debug information'
+                '# Setup: Add to your package.json scripts:',
+                '# "db": "node -r ts-node/register node_modules/kusto-framework-core/dist/scripts/index.js"',
+                '',
+                'npm run db -- list                              # Show all databases',
+                'npm run db -- migrate -d testdb1 -t dev -n "initial_migration"  # Create first migration',
+                'npm run db -- migrate -d testdb1 -t status     # Check migration status',
+                'npm run db -- rollback -d testdb1 --list       # List migrations for rollback',
+                'npm run db -- rollback -d testdb1 -t 2 --preview  # Preview rollback to migration #2',
+                'npm run db -- pull -d testdb1                  # Pull schema from database (DANGEROUS)',
+                'npm run db -- push -d testdb1                  # Push schema to database (DANGEROUS)',
+                'npm run db -- seed -d testdb1                  # Run database seeding (direct seed.ts)',
+                'npm run db -- seed -d testdb1 --prisma        # Run database seeding (Prisma command)',
+                'npm run db -- execute -d testdb1 -c "SELECT * FROM users"  # Execute SQL',
+                'npm run db -- validate -a                      # Validate all schemas',
+                'npm run db -- generate -a                      # Generate all clients',
+                'npm run db -- studio -d testdb1                # Open database studio',
+                'npm run db -- version                          # Show Prisma version',
+                'npm run db -- debug -d testdb1                 # Show debug information',
+                '',
+                '# Note: Script name "db" can be customized in your package.json',
+                '# Example: "database": "..." or "prisma-cli": "..." etc.'
             ]
         },
         ko: {
@@ -1274,21 +1280,27 @@ function showGeneralHelp(lang: 'en' | 'ko') {
                 { cmd: 'debug', desc: '문제 해결을 위한 디버그 정보 표시' },
                 { cmd: 'help', desc: '이 도움말 또는 특정 명령어 도움말 표시' }
             ],            quickExamples: [
-                'kusto-db list                              # 모든 데이터베이스 표시',
-                'kusto-db migrate -d testdb1 -t dev -n "initial_migration"  # 첫 번째 마이그레이션 생성',
-                'kusto-db migrate -d testdb1 -t status     # 마이그레이션 상태 확인',
-                'kusto-db rollback -d testdb1 --list       # 롤백 가능한 마이그레이션 목록',
-                'kusto-db rollback -d testdb1 -t 2 --preview  # 마이그레이션 #2로 롤백 미리보기',
-                'kusto-db pull -d testdb1                  # 데이터베이스에서 스키마 가져오기 (위험)',
-                'kusto-db push -d testdb1                  # 스키마를 데이터베이스에 푸시 (위험)',
-                'kusto-db seed -d testdb1                  # 데이터베이스 시딩 실행 (직접 seed.ts)',
-                'kusto-db seed -d testdb1 --prisma        # 데이터베이스 시딩 실행 (Prisma 명령)',
-                'kusto-db execute -d testdb1 -c "SELECT * FROM users"  # SQL 실행',
-                'kusto-db validate -a                      # 모든 스키마 검증',
-                'kusto-db generate -a                      # 모든 클라이언트 생성',
-                'kusto-db studio -d testdb1                # 데이터베이스 스튜디오 열기',
-                'kusto-db version                          # Prisma 버전 표시',
-                'kusto-db debug -d testdb1                 # 디버그 정보 표시'
+                '# 설정: package.json scripts에 추가:',
+                '# "db": "node -r ts-node/register node_modules/kusto-framework-core/dist/scripts/index.js"',
+                '',
+                'npm run db -- list                              # 모든 데이터베이스 표시',
+                'npm run db -- migrate -d testdb1 -t dev -n "initial_migration"  # 첫 번째 마이그레이션 생성',
+                'npm run db -- migrate -d testdb1 -t status     # 마이그레이션 상태 확인',
+                'npm run db -- rollback -d testdb1 --list       # 롤백 가능한 마이그레이션 목록',
+                'npm run db -- rollback -d testdb1 -t 2 --preview  # 마이그레이션 #2로 롤백 미리보기',
+                'npm run db -- pull -d testdb1                  # 데이터베이스에서 스키마 가져오기 (위험)',
+                'npm run db -- push -d testdb1                  # 스키마를 데이터베이스에 푸시 (위험)',
+                'npm run db -- seed -d testdb1                  # 데이터베이스 시딩 실행 (직접 seed.ts)',
+                'npm run db -- seed -d testdb1 --prisma        # 데이터베이스 시딩 실행 (Prisma 명령)',
+                'npm run db -- execute -d testdb1 -c "SELECT * FROM users"  # SQL 실행',
+                'npm run db -- validate -a                      # 모든 스키마 검증',
+                'npm run db -- generate -a                      # 모든 클라이언트 생성',
+                'npm run db -- studio -d testdb1                # 데이터베이스 스튜디오 열기',
+                'npm run db -- version                          # Prisma 버전 표시',
+                'npm run db -- debug -d testdb1                 # 디버그 정보 표시',
+                '',
+                '# 참고: 스크립트 이름 "db"는 package.json에서 커스터마이징 가능',
+                '# 예시: "database": "..." 또는 "prisma-cli": "..." 등'
             ]
         }
     };
@@ -1309,8 +1321,17 @@ function showGeneralHelp(lang: 'en' | 'ko') {
     });
 
     console.log(`\n💡 ${h.moreHelp}`);
-    console.log(`  kusto-db help -c <command> [--lang ko]`);
-    console.log(`  kusto-db help --lang ko                 # Korean help`);
+    console.log(`  npm run db -- help -c <command> [--lang ko]`);
+    console.log(`  npm run db -- help --lang ko                 # Korean help`);
+    console.log('');
+    console.log(`📦 Package.json Setup:`);
+    console.log(`  Add to your package.json scripts section:`);
+    console.log(`  {`);
+    console.log(`    "scripts": {`);
+    console.log(`      "db": "node scripts/db-cli.js"  // Your wrapper script`);
+    console.log(`    }`);
+    console.log(`  }`);
+    console.log(`  Note: Script name "db" can be customized (e.g., "database", "prisma-cli", etc.)`);
     console.log('');
 }
 
@@ -1831,10 +1852,25 @@ async function checkForceWait(operation: string): Promise<void> {
     }
 }
 
-// Parse arguments
-program.parse(process.argv);
+/**
+ * Main CLI function - can be called programmatically
+ */
+export function runCLI(args?: string[]): void {
+    if (args) {
+        // Programmatic call with arguments
+        program.parse(['node', 'kusto-db-cli', ...args]);
+    } else {
+        // Direct call from command line
+        program.parse(process.argv);
+        
+        // Show help if no arguments provided
+        if (!process.argv.slice(2).length) {
+            program.outputHelp();
+        }
+    }
+}
 
-// Show help if no arguments provided
-if (!process.argv.slice(2).length) {
-    program.outputHelp();
+// Only run if called directly (not imported)
+if (require.main === module) {
+    runCLI();
 }
