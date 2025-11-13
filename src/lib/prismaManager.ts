@@ -5,6 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { config } from 'dotenv';
+import { createRequire } from 'module';
 import {
 	DatabaseClientMap,
 	DatabaseClientType,
@@ -209,17 +210,24 @@ export class PrismaManager implements PrismaManagerWrapOverloads, PrismaManagerC
 					// Multiple fallback strategies for loading the module
 					let nodeRequire: any;
 					
-					// Strategy 1: Try Module.createRequire
+					// Strategy 1: Use createRequire with user project path (not framework path)
 					try {
-						const Module = eval('require')('module');
-						nodeRequire = Module.createRequire(__filename);
+						// Use process.cwd() to create require from user's project, not from framework
+						const userProjectEntryPoint = path.join(process.cwd(), 'package.json');
+						nodeRequire = createRequire(userProjectEntryPoint);
 					} catch (e) {
-						// Strategy 2: Direct eval require
-						nodeRequire = eval('require');
+						// Strategy 2: Fallback to global require if available
+						if (typeof require !== 'undefined') {
+							nodeRequire = require;
+						} else {
+							throw new Error('Cannot create require function in ESM environment');
+						}
 					}
 					
 					// Clear cache and load the module
-					delete nodeRequire.cache[clientIndexPath];
+					if (nodeRequire.cache) {
+						delete nodeRequire.cache[clientIndexPath];
+					}
 					clientModule = nodeRequire(clientIndexPath);
 					DatabasePrismaClient = clientModule.PrismaClient;
 					
@@ -316,13 +324,19 @@ export class PrismaManager implements PrismaManagerWrapOverloads, PrismaManagerC
 						try {
 							let nodeRequire: any;
 							try {
-								const Module = eval('require')('module');
-								nodeRequire = Module.createRequire(__filename);
+								const userProjectEntryPoint = path.join(process.cwd(), 'package.json');
+								nodeRequire = createRequire(userProjectEntryPoint);
 							} catch (e) {
-								nodeRequire = eval('require');
+								if (typeof require !== 'undefined') {
+									nodeRequire = require;
+								} else {
+									throw new Error('Cannot create require function in ESM environment');
+								}
 							}
 							
-							delete nodeRequire.cache[distClientIndexPath];
+							if (nodeRequire.cache) {
+								delete nodeRequire.cache[distClientIndexPath];
+							}
 							clientModule = nodeRequire(distClientIndexPath);
 							DatabasePrismaClient = clientModule.PrismaClient;
 							
@@ -750,9 +764,10 @@ export class PrismaManager implements PrismaManagerWrapOverloads, PrismaManagerC
 			const callerInfo = this.getCallerSourceInfo();
 			
 			if (!this.initialized) {
-				console.error('❌ PrismaManager not initialized. Call initialize() first.');
-				console.error(`   Called from: ${callerInfo.filePath}${callerInfo.lineNumber ? `:${callerInfo.lineNumber}` : ''}`);
-				throw new Error('데이터베이스 관리자가 초기화되지 않았습니다. 애플리케이션 시작 시 initialize()를 호출했는지 확인하세요.');
+				console.warn('⚠️  PrismaManager not initialized yet. Returning null.');
+				console.warn(`   Called from: ${callerInfo.filePath}${callerInfo.lineNumber ? `:${callerInfo.lineNumber}` : ''}`);
+				console.warn(`   💡 Make sure to call initialize() before using database operations.`);
+				return null; // 에러 대신 null 반환
 			}
 
 			// Check if database exists in configs
@@ -796,11 +811,12 @@ export class PrismaManager implements PrismaManagerWrapOverloads, PrismaManagerC
 	 * Use this only when you're sure the connection is healthy
 	 * For most cases, use getClient() instead
 	 */
-	public getClientSync<T = any>(databaseName: string): T {
+	public getClientSync<T = any>(databaseName: string): T | null {
 		try {
 			if (!this.initialized) {
-				console.error('❌ PrismaManager not initialized. Call initialize() first.');
-				throw new Error('데이터베이스 관리자가 초기화되지 않았습니다. 애플리케이션 시작 시 initialize()를 호출했는지 확인하세요.');
+				console.warn('⚠️  PrismaManager not initialized yet. Returning null.');
+				console.warn(`   💡 Make sure to call initialize() before using database operations.`);
+				return null as any; // 에러 대신 null 반환
 			}
 
 			const client = this.databases.get(databaseName);

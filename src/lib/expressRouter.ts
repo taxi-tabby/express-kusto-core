@@ -154,6 +154,7 @@ export class ExpressRouter {
 
     // 데이터베이스별 초기화 상태 추적 (정적 변수)
     private static initializedDatabases: Set<string> = new Set();
+    private static noPrismaWarningShown: boolean = false; // 경고 한 번만 표시
 
     constructor() {
         this.schemaRegistry = CrudSchemaRegistry.getInstance();
@@ -177,7 +178,7 @@ export class ExpressRouter {
             const availableDatabases = prismaManager.getAvailableDatabases();
             
             if (availableDatabases.length === 0) {
-                console.warn('사용 가능한 Prisma 클라이언트가 없습니다. 스키마 분석기를 초기화할 수 없습니다.');
+                // Prisma 클라이언트가 없으면 조용히 반환 (경고 제거)
                 return;
             }
 
@@ -2398,7 +2399,16 @@ export class ExpressRouter {
             });
 
         const enabledActions = this.getEnabledActions(options);
-        const client = prismaManager.getWrap(databaseName);
+        
+        // Lazy client getter - 라우트 로딩 시점이 아닌 실제 요청 시점에 클라이언트를 가져옵니다
+        const getClient = () => {
+            try {
+                return prismaManager.getWrap(databaseName);
+            } catch (error) {
+                console.error(`❌ Failed to get Prisma client for '${databaseName}':`, error);
+                throw error;
+            }
+        };
         
         // Primary key 설정 및 자동 파서 선택
         const primaryKey = options?.primaryKey || 'id';
@@ -2406,39 +2416,39 @@ export class ExpressRouter {
         
         // INDEX - GET / (목록 조회)
         if (enabledActions.includes('index')) {
-            this.setupIndexRoute(client, modelName, options, primaryKey);
+            this.setupIndexRoute(getClient, modelName, options, primaryKey);
         }
 
         // SHOW - GET /:identifier (단일 조회)
         if (enabledActions.includes('show')) {
-            this.setupShowRoute(client, modelName, options, primaryKey, primaryKeyParser);
+            this.setupShowRoute(getClient, modelName, options, primaryKey, primaryKeyParser);
         }
 
         // CREATE - POST / (생성)
         if (enabledActions.includes('create')) {
-            this.setupCreateRoute(client, modelName, options, primaryKey);
+            this.setupCreateRoute(getClient, modelName, options, primaryKey);
         }
 
         // UPDATE - PUT /:identifier, PATCH /:identifier (수정)
         if (enabledActions.includes('update')) {
-            this.setupUpdateRoute(client, modelName, options, primaryKey, primaryKeyParser);
+            this.setupUpdateRoute(getClient, modelName, options, primaryKey, primaryKeyParser);
         }
 
         // DESTROY - DELETE /:identifier (삭제)
         if (enabledActions.includes('destroy')) {
-            this.setupDestroyRoute(client, modelName, options, primaryKey, primaryKeyParser);
+            this.setupDestroyRoute(getClient, modelName, options, primaryKey, primaryKeyParser);
         }
 
         // ATOMIC OPERATIONS - POST /atomic (원자적 작업)
-        this.setupAtomicOperationsRoute(client, modelName, options);
+        this.setupAtomicOperationsRoute(getClient, modelName, options);
 
         // RECOVER - POST /:identifier/recover (복구)
         if (enabledActions.includes('recover')) {
-            this.setupRecoverRoute(client, modelName, options, primaryKey, primaryKeyParser);
+            this.setupRecoverRoute(getClient, modelName, options, primaryKey, primaryKeyParser);
         }
 
         // JSON:API Relationship 라우트 추가
-        this.setupRelationshipRoutes(client, modelName, options, primaryKey, primaryKeyParser);
+        this.setupRelationshipRoutes(getClient, modelName, options, primaryKey, primaryKeyParser);
 
         return this;
     }
@@ -2589,7 +2599,7 @@ export class ExpressRouter {
     /**
      * INDEX 라우트 설정 (GET /) - JSON:API 준수
      */
-    private setupIndexRoute(client: any, modelName: string, options?: any, primaryKey: string = 'id'): void {
+    private setupIndexRoute(getClient: () => any, modelName: string, options?: any, primaryKey: string = 'id'): void {
         const middlewares = options?.middleware?.index || [];
         const isSoftDelete = options?.softDelete?.enabled;
         const softDeleteField = options?.softDelete?.field || 'deletedAt';
@@ -2597,6 +2607,9 @@ export class ExpressRouter {
 
         const handler: HandlerFunction = async (req, res, injected, repo, db) => {
             try {
+                // Lazy load client - 실제 요청 처리 시점에 클라이언트를 가져옵니다
+                const client = getClient();
+                
                 // JSON:API Content-Type ?�더 ?�정
                 res.setHeader('Content-Type', 'application/vnd.api+json');
                 res.setHeader('Vary', 'Accept');
@@ -2840,7 +2853,7 @@ export class ExpressRouter {
      * SHOW 라우트 설정 (GET /:identifier) - JSON:API 준수
      */
     private setupShowRoute(
-        client: any, 
+        getClient: () => any, 
         modelName: string, 
         options?: any, 
         primaryKey: string = 'id', 
@@ -2852,6 +2865,9 @@ export class ExpressRouter {
         
         const handler: HandlerFunction = async (req, res, injected, repo, db) => {
             try {
+                // Lazy load client
+                const client = getClient();
+                
                 // JSON:API Content-Type ?�더 ?�정
                 res.setHeader('Content-Type', 'application/vnd.api+json');
                 res.setHeader('Vary', 'Accept');
@@ -3044,11 +3060,14 @@ export class ExpressRouter {
     /**
      * CREATE 라우트 설정 (POST /) - JSON:API 준수
      */
-    private setupCreateRoute(client: any, modelName: string, options?: any, primaryKey: string = 'id'): void {
+    private setupCreateRoute(getClient: () => any, modelName: string, options?: any, primaryKey: string = 'id'): void {
         const middlewares = options?.middleware?.create || [];
         
         const handler: HandlerFunction = async (req, res, injected, repo, db) => {
             try {
+                // Lazy load client
+                const client = getClient();
+                
                 // JSON:API Content-Type ?�더 ?�정
                 res.setHeader('Content-Type', 'application/vnd.api+json');
                 res.setHeader('Vary', 'Accept');
@@ -3235,9 +3254,12 @@ export class ExpressRouter {
     /**
      * Atomic Operations ?�드?�인???�정 (JSON:API Extension)
      */
-    private setupAtomicOperationsRoute(client: any, modelName: string, options?: any): void {
+    private setupAtomicOperationsRoute(getClient: () => any, modelName: string, options?: any): void {
         const handler: HandlerFunction = async (req, res, injected, repo, db) => {
             try {
+                // Lazy load client
+                const client = getClient();
+                
                 res.setHeader('Content-Type', 'application/vnd.api+json; ext="https://jsonapi.org/ext/atomic"');
                 
                 // Content-Type 검�?(atomic extension ?�요)
@@ -3730,7 +3752,7 @@ export class ExpressRouter {
      * UPDATE 라우트 설정 (PUT /:identifier, PATCH /:identifier) - JSON:API 준수
      */
     private setupUpdateRoute(
-        client: any, 
+        getClient: () => any, 
         modelName: string, 
         options?: any, 
         primaryKey: string = 'id', 
@@ -3741,6 +3763,9 @@ export class ExpressRouter {
         const handler: HandlerFunction = async (req, res, injected, repo, db) => {
 
             try {
+                // Lazy load client
+                const client = getClient();
+                
                 // JSON:API Content-Type ?�더 ?�정
                 res.setHeader('Content-Type', 'application/vnd.api+json');
                 
@@ -3957,7 +3982,7 @@ export class ExpressRouter {
      * DESTROY 라우트 설정 (DELETE /:identifier) - JSON:API 준수
      */
     private setupDestroyRoute(
-        client: any, 
+        getClient: () => any, 
         modelName: string, 
         options?: any, 
         primaryKey: string = 'id', 
@@ -3969,6 +3994,9 @@ export class ExpressRouter {
         
         const handler: HandlerFunction = async (req, res, injected, repo, db) => {
             try {
+                // Lazy load client
+                const client = getClient();
+                
                 // JSON:API Content-Type ?�더 ?�정
                 res.setHeader('Content-Type', 'application/vnd.api+json');
                 
@@ -4114,7 +4142,7 @@ export class ExpressRouter {
      * RECOVER 라우트 설정 (POST /:identifier/recover) - JSON:API 준수
      */
     private setupRecoverRoute(
-        client: any, 
+        getClient: () => any, 
         modelName: string, 
         options?: any, 
         primaryKey: string = 'id', 
@@ -4124,6 +4152,9 @@ export class ExpressRouter {
         
         const handler: HandlerFunction = async (req, res, injected, repo, db) => {
             try {
+                // Lazy load client
+                const client = getClient();
+                
                 // JSON:API Content-Type ?�더 ?�정
                 res.setHeader('Content-Type', 'application/vnd.api+json');
                 
@@ -4630,7 +4661,7 @@ export class ExpressRouter {
      * 관�??�체�?관리하???�우?��? 관??리소?��? 조회?�는 ?�우?��? ?�성
      */
     private setupRelationshipRoutes(
-        client: any, 
+        getClient: () => any, 
         modelName: string, 
         options?: any, 
         primaryKey: string = 'id', 
@@ -4642,6 +4673,9 @@ export class ExpressRouter {
         // GET /:identifier/:relationName - 관??리소??직접 조회
         this.router.get(`/:${primaryKey}/:relationName`, async (req, res) => {
             try {
+                // Lazy load client
+                const client = getClient();
+                
                 res.setHeader('Content-Type', 'application/vnd.api+json');
                 
                 const { success, parsedIdentifier } = this.extractAndParsePrimaryKey(
@@ -4727,6 +4761,9 @@ export class ExpressRouter {
                 if (!success) return;
 
                 const relationName = req.params.relationName;
+                
+                // Lazy load client for this handler
+                const client = getClient();
                 
                 // 기본 리소??조회
                 const item = await client[modelName].findUnique({
@@ -4821,6 +4858,9 @@ export class ExpressRouter {
                 const relationshipData = req.body.data;
                 let connectData;
 
+                // Lazy load client for this handler
+                const client = getClient();
+
                 if (Array.isArray(relationshipData)) {
                     connectData = { [relationName]: { connect: relationshipData.map((item: any) => ({ id: item.id })) } };
                 } else {
@@ -4894,6 +4934,9 @@ export class ExpressRouter {
                     updateData = { [relationName]: { connect: { id: relationshipData.id } } };
                 }
 
+                // Lazy load client for this handler
+                const client = getClient();
+
                 await client[modelName].update({
                     where: { [primaryKey]: parsedIdentifier },
                     data: updateData
@@ -4946,6 +4989,9 @@ export class ExpressRouter {
                 const relationshipData = req.body.data;
                 let disconnectData;
 
+                // Lazy load client for this handler
+                const client = getClient();
+
                 if (Array.isArray(relationshipData)) {
                     disconnectData = { [relationName]: { disconnect: relationshipData.map((item: any) => ({ id: item.id })) } };
                 } else {
@@ -4979,6 +5025,9 @@ export class ExpressRouter {
 
                 const relationName = req.params.relationName;
                 const queryParams = CrudQueryParser.parseQuery(req, modelName, this.schemaAnalyzer);
+                
+                // Lazy load client for this handler
+                const client = getClient();
                 
                 // 기본 리소??조회
                 const item = await client[modelName].findUnique({
