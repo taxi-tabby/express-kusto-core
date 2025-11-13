@@ -39,7 +39,14 @@ function generateDatabaseTypes(dbPath = './src/app/db', outputDir = './src/core'
   ).join('\n');
   
   // Generate Union type for database names
-  const databaseNamesUnion = dbFolders.map(dbName => `'${dbName}'`).join(' | ');
+  const databaseNamesUnion = dbFolders.length > 0 
+    ? dbFolders.map(dbName => `'${dbName}'`).join(' | ')
+    : 'string';
+  
+  // Generate DatabaseNamesUnion with fallback to string
+  const databaseNamesUnionType = dbFolders.length > 0
+    ? `keyof DatabaseClientMap | string`
+    : `string`;
   
   // Generate method overloads
   const methodOverloads = dbFolders.map(dbName => 
@@ -57,12 +64,22 @@ function generateDatabaseTypes(dbPath = './src/app/db', outputDir = './src/core'
   const genericClientSignature = `  getClient<TDbName extends keyof DatabaseClientMap>(databaseName: TDbName): Promise<DatabaseClientMap[TDbName]>;
   getClient<TDbName extends string>(databaseName: TDbName): Promise<any>;`;
 
-  // Generate PrismaManager class extension with proper overloads
-  const classExtension = `
+  // Generate module augmentation for both DatabaseClientMap and PrismaManager
+  const moduleAugmentation = `
 /**
- * Extend PrismaManager class with proper method overloads
+ * Augment kusto-framework-core module with actual database types
  */
 declare module 'kusto-framework-core' {
+  /**
+   * Type mapping for database names to their corresponding Prisma client instances
+   */
+  interface DatabaseClientMap {
+${clientMapEntries}
+  }
+
+  /**
+   * Extend PrismaManager class with proper method overloads
+   */
   interface PrismaManager {
 ${methodOverloads}
 ${getClientOverloads}
@@ -84,47 +101,31 @@ ${typeImports}
 ${instanceTypes}
 
 /**
- * Type mapping for database names to their corresponding Prisma client instances
- */
-export interface DatabaseClientMap {
-${clientMapEntries}
-  [key: string]: any; // Allow for additional databases
-}
-
-/**
  * Enhanced client type that preserves actual Prisma client type information
  */
-export type DatabaseClientType<T extends string> = T extends keyof DatabaseClientMap 
-  ? DatabaseClientMap[T] 
+export type DatabaseClientType<T extends string> = T extends keyof import('kusto-framework-core').DatabaseClientMap 
+  ? import('kusto-framework-core').DatabaseClientMap[T] 
+  : any;
+
+/**
+ * Type helper for extracting client type from database name
+ * Use this when you need to get the client type for a specific database
+ */
+export type GetDatabaseClient<T extends string> = T extends keyof import('kusto-framework-core').DatabaseClientMap
+  ? import('kusto-framework-core').DatabaseClientMap[T]
   : any;
 
 /**
  * Valid database names
  */
-export type DatabaseName = keyof DatabaseClientMap;
+export type DatabaseName = keyof import('kusto-framework-core').DatabaseClientMap;
 
 /**
  * Database names as Union type
  */
-export type DatabaseNamesUnion = ${databaseNamesUnion};
+export type DatabaseNamesUnion = keyof import('kusto-framework-core').DatabaseClientMap | string;
 
-/**
- * Method overloads for getWrap
- */
-export interface PrismaManagerWrapOverloads {
-${methodOverloads}
-${genericWrapSignature}
-}
-
-/**
- * Method overloads for getClient
- */
-export interface PrismaManagerClientOverloads {
-${getClientOverloads}
-${genericClientSignature}
-}
-
-${classExtension}
+${moduleAugmentation}
 `;
 
   // Write the generated types to a file

@@ -3,8 +3,8 @@ import { Validator, Schema, ValidationResult, FieldSchema } from './validator';
 import { log } from '../external/winston';
 import { DependencyInjector } from './dependencyInjector';
 import { Injectable } from './types/generated-injectable-types';
-import { prismaManager } from './prismaManager';
-import { repositoryManager } from './repositoryManager';
+import { RepositoryTypeMap } from './types/generated-repository-types';
+import { KustoDbProxy, kustoManager } from './kustoManager';
 
 export interface RequestConfig {
     body?: Schema;
@@ -285,7 +285,7 @@ export class RequestHandler {
      * 핸들러 래퍼 - 검증과 응답을 자동으로 처리 (Dependency Injection 지원)
      */    static createHandler(
         config: HandlerConfig,
-        handler: (req: ValidatedRequest, res: Response, injected: Injectable, repo: typeof repositoryManager, db: typeof prismaManager) => Promise<any> | any
+        handler: (req: ValidatedRequest, res: Response, injected: Injectable, repo: RepositoryTypeMap, db: KustoDbProxy) => Promise<any> | any
     ) {
         const middlewares: any[] = [];
 
@@ -326,7 +326,7 @@ export class RequestHandler {
             try {                // Dependency injector에서 모든 injectable 모듈 가져오기
                 const injected = DependencyInjector.getInstance().getInjectedModules();
                 
-                const result = await handler(req, res, injected, repositoryManager, prismaManager);
+                const result = await handler(req, res, injected, kustoManager.repo, kustoManager.db);
 
                 // 이미 응답이 전송되었으면 리턴
                 if (res.headersSent) {
@@ -363,7 +363,7 @@ export class RequestHandler {
      * 간단한 핸들러 생성 (요청 검증만)
      */    static withValidation(
         requestConfig: RequestConfig,
-        handler: (req: ValidatedRequest, res: Response, injected: Injectable, repo: typeof repositoryManager, db: typeof prismaManager) => void
+        handler: (req: ValidatedRequest, res: Response, injected: Injectable, repo: RepositoryTypeMap, db: KustoDbProxy) => void
     ) {
         return this.createHandler({ request: requestConfig }, handler);
     }
@@ -373,7 +373,7 @@ export class RequestHandler {
      */    static withFullValidation(
         requestConfig: RequestConfig,
         responseConfig: ResponseConfig,
-        handler: (req: ValidatedRequest, res: Response, injected: Injectable, repo: typeof repositoryManager, db: typeof prismaManager) => Promise<any> | any
+        handler: (req: ValidatedRequest, res: Response, injected: Injectable, repo: RepositoryTypeMap, db: KustoDbProxy) => Promise<any> | any
     ) {
         return this.createHandler({
             request: requestConfig,

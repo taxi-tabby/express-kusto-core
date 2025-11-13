@@ -13,10 +13,32 @@
 
 /**
  * Type mapping for database names to their corresponding Prisma client instances
+ * 
+ * This interface is designed to be augmented by the consuming project via module augmentation.
+ * Users should create a `kusto-types.d.ts` file in their project to extend this interface.
+ * 
+ * @example
+ * ```typescript
+ * // In your project's kusto-types.d.ts:
+ * import { PrismaClient } from '@prisma/client';
+ * 
+ * declare module 'kusto-framework-core' {
+ *   interface DatabaseClientMap {
+ *     default: PrismaClient;
+ *     analytics: AnalyticsPrismaClient;
+ *   }
+ * }
+ * ```
  */
 export interface DatabaseClientMap {
-  // temporary: TemporaryInstance;
-  [key: string]: any; // Allow for additional databases
+  // This interface is intentionally empty and should be extended via module augmentation
+}
+
+/**
+ * Allow additional databases through index signature
+ */
+export interface DatabaseClientMapExtended extends DatabaseClientMap {
+  [key: string]: any;
 }
 
 /**
@@ -27,6 +49,14 @@ export type DatabaseClientType<T extends string> = T extends keyof DatabaseClien
   : any;
 
 /**
+ * Type helper for extracting client type from database name
+ * Use this when you need to get the client type for a specific database
+ */
+export type GetDatabaseClient<T extends string> = T extends keyof DatabaseClientMap
+  ? DatabaseClientMap[T]
+  : any;
+
+/**
  * Valid database names
  */
 export type DatabaseName = keyof DatabaseClientMap;
@@ -34,7 +64,7 @@ export type DatabaseName = keyof DatabaseClientMap;
 /**
  * Database names as Union type
  */
-export type DatabaseNamesUnion = string;
+export type DatabaseNamesUnion = keyof DatabaseClientMap | string;
 
 /**
  * Method overloads for getWrap

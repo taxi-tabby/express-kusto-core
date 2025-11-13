@@ -1,5 +1,5 @@
 // Type extensions for Express Request object
-import { MiddlewareParamName, MiddlewareParams } from './generated-injectable-types';
+import type { MiddlewareParamName, MiddlewareParams } from './generated-injectable-types';
 import type { KustoManager } from '../kustoManager';
 
 declare global {
@@ -16,14 +16,22 @@ declare global {
       /**
        * Kusto 프레임워크의 중앙 관리자
        * injectable, repo, db 등 모든 주요 서비스에 접근할 수 있습니다.
+       * 
+       * @example
+       * ```typescript
+       * // Access injectable modules
+       * const myModule = req.kusto.injectable.myModule;
+       * 
+       * // Access repositories  
+       * const userRepo = req.kusto.repo.user;
+       * 
+       * // Access database clients
+       * const client = await req.kusto.db.getClient('default');
+       * ```
        */
       kusto: KustoManager;
     }
   }
 }
-
-
-
-
 
 export {};

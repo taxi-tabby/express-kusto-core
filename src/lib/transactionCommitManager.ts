@@ -1,4 +1,4 @@
-import { DatabaseClientMap, DatabaseNamesUnion } from './types/generated-db-types';
+import { DatabaseClientMap } from './types/generated-db-types';
 import { PrismaManager } from './prismaManager';
 import { log } from '../external/winston';
 
@@ -20,9 +20,9 @@ export enum TransactionState {
 /**
  * 트랜잭션 참여자 정보
  */
-export interface TransactionParticipant<T extends DatabaseNamesUnion = DatabaseNamesUnion> {
+export interface TransactionParticipant<T extends string = string> {
     database: T;
-    operation: (prisma: DatabaseClientMap[T]) => Promise<any>;
+    operation: (prisma: T extends keyof DatabaseClientMap ? DatabaseClientMap[T] : any) => Promise<any>;
     state: TransactionState;
     transactionId?: string; // 실제 데이터베이스 트랜잭션 ID
     preparedAt?: Date;
@@ -31,7 +31,7 @@ export interface TransactionParticipant<T extends DatabaseNamesUnion = DatabaseN
     timeout?: number; // 개별 타임아웃 설정 가능
     result?: any; // Prepare 단계에서 실행된 결과
     requiredLocks?: string[]; // 특정 리소스에 대한 락 요구사항
-    rollbackOperation?: (prisma: DatabaseClientMap[T]) => Promise<void>; // 보상 트랜잭션
+    rollbackOperation?: (prisma: T extends keyof DatabaseClientMap ? DatabaseClientMap[T] : any) => Promise<void>; // 보상 트랜잭션
     priority?: number; // 커밋 우선순위 (높을수록 먼저 커밋)
     validatedResult?: any; // 검증된 결과 캐시
 }

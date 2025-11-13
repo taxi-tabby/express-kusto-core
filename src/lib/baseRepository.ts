@@ -1,6 +1,5 @@
 import { prismaManager, PrismaManager } from './prismaManager';
-import { DatabaseClientMap } from './types/generated-db-types'
-import type { DatabaseNamesUnion } from './types/generated-db-types';
+import { DatabaseClientMap, GetDatabaseClient } from './types/generated-db-types'
 import { log } from '../external/winston';
 import {
     TransactionCommitManager,
@@ -16,9 +15,9 @@ import {
  * 자동화된 분산 트랜잭션을 위한 인터페이스 (보상 트랜잭션 지원)
  * @template TDatabase 데이터베이스 타입 (database 속성의 값에 따라 operation 매개변수 타입이 자동 추론됨)
  */
-export interface DistributedTransactionOperation<TDatabase extends DatabaseNamesUnion = DatabaseNamesUnion> {
+export interface DistributedTransactionOperation<TDatabase extends string = string> {
     database: TDatabase;
-    operation: (prisma: DatabaseClientMap[TDatabase]) => Promise<any>;
+    operation: (prisma: TDatabase extends keyof DatabaseClientMap ? DatabaseClientMap[TDatabase] : any) => Promise<any>;
     timeout?: number;
 
     /** 트랜잭션 우선순위 (높을수록 먼저 커밋) */
@@ -28,7 +27,7 @@ export interface DistributedTransactionOperation<TDatabase extends DatabaseNames
     requiredLocks?: string[];
 
     /** 보상 트랜잭션 - 실패 시 되돌리기 위한 작업 */
-    rollbackOperation?: (prisma: DatabaseClientMap[TDatabase]) => Promise<void>;
+    rollbackOperation?: (prisma: TDatabase extends keyof DatabaseClientMap ? DatabaseClientMap[TDatabase] : any) => Promise<void>;
 }
 
 
@@ -36,8 +35,13 @@ export interface DistributedTransactionOperation<TDatabase extends DatabaseNames
 /**
  * 리포지터리의 통합된 규칙을 위한 기본 확장용 클래스.
  * 이 클래스를 상속받아 각 더욱 편리하게 repository를 구현할 목적.
+ * @template T 데이터베이스 이름 타입 (DatabaseClientMap에 정의된 키를 사용하면 자동완성 및 타입 안전성 지원)
+ * @template TClient Prisma 클라이언트 타입 (자동으로 추론됨)
  */
-export abstract class BaseRepository<T extends DatabaseNamesUnion> {
+export abstract class BaseRepository<
+    T extends string = string,
+    TClient = T extends keyof DatabaseClientMap ? DatabaseClientMap[T] : any
+> {
 
     /// PrismaManager 인스턴스
     /// 이 인스턴스는 생성자에서 주입받거나 기본값으로 설정됩니다.
@@ -99,16 +103,16 @@ export abstract class BaseRepository<T extends DatabaseNamesUnion> {
      * 리포지터리의 데이터베이스 클라이언트
      * @returns 타입 안전한 Prisma 클라이언트
      */
-    protected get client(): DatabaseClientMap[T] {
-        return this.db.getWrap(this.repositoryDatabaseName);
+    protected get client(): TClient {
+        return this.db.getWrap(this.repositoryDatabaseName) as TClient;
     }
 
     /**
      * 비동기 데이터베이스 클라이언트 (재연결 로직 포함)
      * @returns 타입 안전한 Prisma 클라이언트 (Promise)
      */
-    protected async getAsyncClient(): Promise<DatabaseClientMap[T]> {
-        return await this.db.getClient(this.repositoryDatabaseName);
+    protected async getAsyncClient(): Promise<TClient> {
+        return await this.db.getClient(this.repositoryDatabaseName) as Promise<TClient>;
     }
 
     /**
@@ -116,7 +120,7 @@ export abstract class BaseRepository<T extends DatabaseNamesUnion> {
      * 연결 오류 발생 시 자동으로 재연결 후 재시도
      */
     protected async executeWithAutoReconnect<R>(
-        operation: (client: DatabaseClientMap[T]) => Promise<R>,
+        operation: (client: TClient) => Promise<R>,
         maxRetries: number = 1
     ): Promise<R> {
         let lastError: Error | null = null;
@@ -192,20 +196,20 @@ export abstract class BaseRepository<T extends DatabaseNamesUnion> {
      * @returns 타입 안전한 분산 트랜잭션 작업 객체
      */
 
-    public $createDistributedOperation<TDatabase extends DatabaseNamesUnion>(
+    public $createDistributedOperation<TDatabase extends string>(
         database: TDatabase,
-        operation: (prisma: DatabaseClientMap[TDatabase]) => Promise<any>,
+        operation: (prisma: TDatabase extends keyof DatabaseClientMap ? DatabaseClientMap[TDatabase] : any) => Promise<any>,
         options?: {
             timeout?: number;
-            rollbackOperation?: (prisma: DatabaseClientMap[TDatabase]) => Promise<void>;
+            rollbackOperation?: (prisma: TDatabase extends keyof DatabaseClientMap ? DatabaseClientMap[TDatabase] : any) => Promise<void>;
             priority?: number;
         }
     ): DistributedTransactionOperation<TDatabase> {
         return {
             database,
-            operation,
+            operation: operation as any,
             timeout: options?.timeout,
-            rollbackOperation: options?.rollbackOperation,
+            rollbackOperation: options?.rollbackOperation as any,
             priority: options?.priority
         };
     }
@@ -216,7 +220,7 @@ export abstract class BaseRepository<T extends DatabaseNamesUnion> {
      * 자동 재시도, 성능 모니터링, 에러 핸들링 통합
      */
     public async $transaction<R>(
-        callback: (prisma: DatabaseClientMap[T]) => Promise<R>,
+        callback: (prisma: TClient) => Promise<R>,
         options?: {
             isolationLevel?: 'ReadUncommitted' | 'ReadCommitted' | 'RepeatableRead' | 'Serializable';
             maxWait?: number;
@@ -246,7 +250,7 @@ export abstract class BaseRepository<T extends DatabaseNamesUnion> {
             try {
                 const client = this.client as any;
                 const result = await client.$transaction(
-                    async (prisma: DatabaseClientMap[T]) => callback(prisma),
+                    async (prisma: any) => callback(prisma),
                     {
                         isolationLevel: config.isolationLevel,
                         maxWait: config.maxWait,
@@ -295,7 +299,7 @@ export abstract class BaseRepository<T extends DatabaseNamesUnion> {
      * 배치 작업 처리 - 대량 데이터 작업 최적화
      */
     public async $batchOperation<R>(
-        operations: Array<(prisma: DatabaseClientMap[T]) => Promise<R>>,
+        operations: Array<(prisma: TClient) => Promise<R>>,
         batchSize: number = 100
     ): Promise<R[]> {
         const results: R[] = [];
@@ -556,7 +560,7 @@ export abstract class BaseRepository<T extends DatabaseNamesUnion> {
      */
     public async $runDistributedTransaction<TResult = any>(
         operations: readonly (DistributedTransactionOperation<any> | {
-            database: DatabaseNamesUnion;
+            database: string;
             operation: (prisma: any) => Promise<any>;
             timeout?: number;
         })[],        options: {

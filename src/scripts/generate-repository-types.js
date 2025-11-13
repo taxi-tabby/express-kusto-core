@@ -88,22 +88,11 @@ function generateRepositoryTypes(repositoriesPath, outputDir = 'src/core') {
 	const repositoryTypes = repositories.map(repository => {
 		return `type ${repository.className}Type = InstanceType<typeof ${repository.className}>;`;
 	}).join('\n');
+	
 	// Generate Repository type map (for getRepository return types)
 	const repositoryTypeMap = repositories.map(repository =>
 		`  '${repository.propertyName}': ${repository.className}Type;`
 	).join('\n');
-
-	// Ensure RepositoryTypeMap interface is always present (even if empty)
-	const repositoryTypeMapInterface = repositoryTypeMap 
-		? `// Repository type map for getRepository return types
-export interface RepositoryTypeMap {
-${repositoryTypeMap}
-}`
-		: `// Repository type map for getRepository return types (empty - no repositories found)
-export interface RepositoryTypeMap {
-  // No repository files found
-  // Add TypeScript files ending with .repository.ts to src/app/repos/ and regenerate types
-}`;
 
 	// Generate repository registry for runtime loading (using relative paths)
 	const repositoryRegistry = repositories.map(repository =>
@@ -118,18 +107,26 @@ ${imports}
 // Repository type definitions
 ${repositoryTypes}
 
-${repositoryTypeMapInterface}
-
 // Repository registry for dynamic loading
 export const REPOSITORY_REGISTRY = {
 ${repositoryRegistry}
 } as const;
 
+/**
+ * Augment kusto-framework-core module with actual repository types
+ */
+declare module 'kusto-framework-core' {
+  // Repository type map for getRepository return types
+  interface RepositoryTypeMap {
+${repositoryTypeMap}
+  }
+}
+
 // Repository names type
 export type RepositoryName = keyof typeof REPOSITORY_REGISTRY;
 
 // Helper type for getting repository type by name
-export type GetRepositoryType<T extends RepositoryName> = T extends keyof RepositoryTypeMap ? RepositoryTypeMap[T] : never;
+export type GetRepositoryType<T extends RepositoryName> = T extends keyof import('kusto-framework-core').RepositoryTypeMap ? import('kusto-framework-core').RepositoryTypeMap[T] : never;
 `;
 
 	// Write the generated types to file
@@ -145,35 +142,41 @@ export type GetRepositoryType<T extends RepositoryName> = T extends keyof Reposi
 /**
  * Generate default types when no repository files exist
  */
-function generateDefaultTypes() {
+function generateDefaultTypes(outputDir = 'src/core') {
 	const typeDefinition = `// Auto-generated file - DO NOT EDIT MANUALLY
 // Generated on: ${new Date().toISOString()}
 // Source: src/app/repos/
-
-// Repository type map for getRepository return types (empty - no repositories found)
-export interface RepositoryTypeMap {
-  // No repository files found
-  // Add TypeScript files ending with .repository.ts to src/app/repos/ and regenerate types
-}
 
 // Repository registry for dynamic loading (empty)
 export const REPOSITORY_REGISTRY = {
   // No repositories available
 } as const;
 
+/**
+ * Augment kusto-framework-core module with repository types
+ * Currently empty - add .repository.ts files to src/app/repos/ and regenerate types
+ */
+declare module 'kusto-framework-core' {
+  // Repository type map for getRepository return types (empty - no repositories found)
+  interface RepositoryTypeMap {
+    // No repository files found
+    // Add TypeScript files ending with .repository.ts to src/app/repos/ and regenerate types
+  }
+}
+
 // Repository names type
 export type RepositoryName = keyof typeof REPOSITORY_REGISTRY;
 
 // Helper type for getting repository type by name
-export type GetRepositoryType<T extends RepositoryName> = T extends keyof RepositoryTypeMap ? RepositoryTypeMap[T] : never;
+export type GetRepositoryType<T extends RepositoryName> = T extends keyof import('kusto-framework-core').RepositoryTypeMap ? import('kusto-framework-core').RepositoryTypeMap[T] : never;
 `;
 
-	const outputPath = path.join(process.cwd(), 'src', 'core', 'generated-repository-types.ts');
+	const outputPath = path.join(process.cwd(), outputDir, 'generated-repository-types.ts');
 
 	// Ensure directory exists
-	const outputDir = path.dirname(outputPath);
-	if (!fs.existsSync(outputDir)) {
-		fs.mkdirSync(outputDir, { recursive: true });
+	const outputDirPath = path.dirname(outputPath);
+	if (!fs.existsSync(outputDirPath)) {
+		fs.mkdirSync(outputDirPath, { recursive: true });
 	}
 
 	fs.writeFileSync(outputPath, typeDefinition, 'utf8');

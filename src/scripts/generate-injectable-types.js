@@ -474,18 +474,6 @@ ${imports}
 // Type definitions
 ${allTypes}
 
-// Injectable modules interface
-export interface Injectable {
-${injectableProperties}
-}
-
-// Middleware interface
-export interface Middleware {
-${middlewareProperties}
-}
-
-${middlewareParamsInterface}
-
 // Module registry for dynamic loading
 export const MODULE_REGISTRY = {
 ${moduleRegistry}
@@ -501,6 +489,26 @@ export const MIDDLEWARE_PARAM_MAPPING = {
 ${middlewareParamMappingExport}
 } as const;
 
+/**
+ * Augment kusto-framework-core module with actual injectable types
+ */
+declare module 'kusto-framework-core' {
+  // Injectable modules interface
+  interface Injectable {
+${injectableProperties}
+  }
+
+  // Middleware interface
+  interface Middleware {
+${middlewareProperties}
+  }
+
+  // Middleware parameters interface
+  interface MiddlewareParams {
+${middlewareParamProperties || '    // No middleware parameters'}
+  }
+}
+
 // Module names type
 export type ModuleName = keyof typeof MODULE_REGISTRY;
 
@@ -508,16 +516,16 @@ export type ModuleName = keyof typeof MODULE_REGISTRY;
 export type MiddlewareName = keyof typeof MIDDLEWARE_REGISTRY;
 
 // Middleware parameter names type
-export type MiddlewareParamName = keyof MiddlewareParams;
+export type MiddlewareParamName = keyof typeof MIDDLEWARE_PARAM_MAPPING;
 
 // Helper type for getting module type by name
-export type GetModuleType<T extends ModuleName> = T extends keyof Injectable ? Injectable[T] : never;
+export type GetModuleType<T extends ModuleName> = T extends keyof import('kusto-framework-core').Injectable ? import('kusto-framework-core').Injectable[T] : never;
 
 // Helper type for getting middleware type by name
-export type GetMiddlewareType<T extends MiddlewareName> = T extends keyof Middleware ? Middleware[T] : never;
+export type GetMiddlewareType<T extends MiddlewareName> = T extends keyof import('kusto-framework-core').Middleware ? import('kusto-framework-core').Middleware[T] : never;
 
 // Helper type for getting middleware parameter type by name
-export type GetMiddlewareParamType<T extends MiddlewareParamName> = T extends keyof MiddlewareParams ? MiddlewareParams[T] : never;
+export type GetMiddlewareParamType<T extends MiddlewareParamName> = T extends keyof import('kusto-framework-core').MiddlewareParams ? import('kusto-framework-core').MiddlewareParams[T] : never;
 `;
 
 	// Write the generated types to file
@@ -537,24 +545,6 @@ function generateDefaultTypes(outputPath) {	const typeDefinition = `// Auto-gene
 // Generated on: ${new Date().toISOString()}
 // Source: src/app/injectable/
 
-// Injectable modules interface (empty - no modules found)
-export interface Injectable {
-  // No injectable modules found
-  // Add TypeScript files to src/app/injectable/ and regenerate types
-}
-
-// Middleware interface (empty - no middlewares found)
-export interface Middleware {
-  // No middleware modules found
-  // Add *.middleware.ts files to src/app/injectable/ and regenerate types
-}
-
-// Middleware parameters interface (empty - no middleware interfaces found)
-export interface MiddlewareParams {
-  // No middleware parameter interfaces found
-  // Add *.middleware.interface.ts files to src/app/injectable/ and regenerate types
-}
-
 // Module registry for dynamic loading (empty)
 export const MODULE_REGISTRY = {
   // No modules available
@@ -570,6 +560,30 @@ export const MIDDLEWARE_PARAM_MAPPING = {
   // No middleware parameter mappings found
 } as const;
 
+/**
+ * Augment kusto-framework-core module with injectable types
+ * Currently empty - add TypeScript files to src/app/injectable/ and regenerate types
+ */
+declare module 'kusto-framework-core' {
+  // Injectable modules interface (empty - no modules found)
+  interface Injectable {
+    // No injectable modules found
+    // Add TypeScript files to src/app/injectable/ and regenerate types
+  }
+
+  // Middleware interface (empty - no middlewares found)
+  interface Middleware {
+    // No middleware modules found
+    // Add *.middleware.ts files to src/app/injectable/ and regenerate types
+  }
+
+  // Middleware parameters interface (empty - no middleware interfaces found)
+  interface MiddlewareParams {
+    // No middleware parameter interfaces found
+    // Add *.middleware.interface.ts files to src/app/injectable/ and regenerate types
+  }
+}
+
 // Module names type
 export type ModuleName = keyof typeof MODULE_REGISTRY;
 
@@ -577,16 +591,16 @@ export type ModuleName = keyof typeof MODULE_REGISTRY;
 export type MiddlewareName = keyof typeof MIDDLEWARE_REGISTRY;
 
 // Middleware parameter names type
-export type MiddlewareParamName = keyof MiddlewareParams;
+export type MiddlewareParamName = keyof typeof MIDDLEWARE_PARAM_MAPPING;
 
 // Helper type for getting module type by name
-export type GetModuleType<T extends ModuleName> = T extends keyof Injectable ? Injectable[T] : never;
+export type GetModuleType<T extends ModuleName> = T extends keyof import('kusto-framework-core').Injectable ? import('kusto-framework-core').Injectable[T] : never;
 
 // Helper type for getting middleware type by name
-export type GetMiddlewareType<T extends MiddlewareName> = T extends keyof Middleware ? Middleware[T] : never;
+export type GetMiddlewareType<T extends MiddlewareName> = T extends keyof import('kusto-framework-core').Middleware ? import('kusto-framework-core').Middleware[T] : never;
 
 // Helper type for getting middleware parameter type by name
-export type GetMiddlewareParamType<T extends MiddlewareParamName> = T extends keyof MiddlewareParams ? MiddlewareParams[T] : never;
+export type GetMiddlewareParamType<T extends MiddlewareParamName> = T extends keyof import('kusto-framework-core').MiddlewareParams ? import('kusto-framework-core').MiddlewareParams[T] : never;
 `;
 
 	// Ensure directory exists

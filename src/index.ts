@@ -11,7 +11,7 @@ export { Application, createApplication, initExpressCore_V1 } from './Applicatio
 // ============================================
 export { BaseRepository } from './lib/baseRepository';
 export { prismaManager } from './lib/prismaManager';
-export { kustoManager } from './lib/kustoManager';
+export { kustoManager, KustoManager } from './lib/kustoManager';
 export { repositoryManager } from './lib/repositoryManager';
 export { TransactionCommitManager } from './lib/transactionCommitManager';
 
@@ -95,6 +95,25 @@ export type {
     BaseMiddlewareHandlerFunction, 
     BaseValidatedMiddlewareHandlerFunction 
 } from './lib/types/handler-types';
+export type { 
+    DatabaseClientMap, 
+    GetDatabaseClient, 
+    DatabaseClientType,
+    DatabaseName,
+    DatabaseNamesUnion
+} from './lib/types/generated-db-types';
+export type { 
+    Injectable,
+    Middleware,
+    MiddlewareParams,
+    ModuleName,
+    MiddlewareName,
+    MiddlewareParamName
+} from './lib/types/generated-injectable-types';
+export type {
+    RepositoryTypeMap,
+    RepositoryName
+} from './lib/types/generated-repository-types';
 
 // ============================================
 // External utilities

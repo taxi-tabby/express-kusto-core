@@ -4,7 +4,10 @@ import multer from 'multer';
 import { DocumentationGenerator } from './documentationGenerator';
 import { RequestHandler as CustomRequestHandler, RequestConfig, ResponseConfig, ValidatedRequest } from './requestHandler';
 import { Injectable, MiddlewareName, MiddlewareParams, MIDDLEWARE_PARAM_MAPPING } from './types/generated-injectable-types';
-import { DatabaseNamesUnion, DatabaseClientMap } from './types/generated-db-types';
+import { RepositoryTypeMap } from './types/generated-repository-types';
+import { DatabaseClientMap } from './types/generated-db-types';
+import { KustoDbProxy } from './kustoManager';
+import { GetMiddleware, GetMiddlewareParamFor } from './types/configurable-types';
 import { DependencyInjector } from './dependencyInjector';
 import { prismaManager } from './prismaManager'
 import { repositoryManager } from './repositoryManager'
@@ -16,41 +19,40 @@ import { ERROR_CODES, getHttpStatusForErrorCode } from './errorCodes';
 import { CrudSchemaRegistry } from './crudSchemaRegistry';
 import { PrismaSchemaAnalyzer } from './prismaSchemaAnalyzer';
 import './types/express-extensions';
-import { KustoConfigurableTypes, GetInjectable, GetRepositoryManager, GetPrismaManager, GetMiddleware, GetMiddlewareParams, GetMiddlewareParamFor } from './types/configurable-types';
 
 
 export type HandlerFunction = (
     req: Request, 
     res: Response, 
-    injected: GetInjectable, 
-    repo: GetRepositoryManager, 
-    db: GetPrismaManager
+    injected: Injectable, 
+    repo: RepositoryTypeMap, 
+    db: KustoDbProxy
 ) => void;
 
 export type ValidatedHandlerFunction<TConfig extends RequestConfig = RequestConfig> = (
     req: ValidatedRequest<TConfig>, 
     res: Response, 
-    injected: GetInjectable, 
-    repo: GetRepositoryManager, 
-    db: GetPrismaManager
+    injected: Injectable, 
+    repo: RepositoryTypeMap, 
+    db: KustoDbProxy
 ) => Promise<any> | any;
 
 export type MiddlewareHandlerFunction = (
     req: Request, 
     res: Response, 
     next: NextFunction, 
-    injected: GetInjectable, 
-    repo: GetRepositoryManager, 
-    db: GetPrismaManager
+    injected: Injectable, 
+    repo: RepositoryTypeMap, 
+    db: KustoDbProxy
 ) => void;
 
 export type ValidatedMiddlewareHandlerFunction<TConfig extends RequestConfig = RequestConfig> = (
     req: ValidatedRequest<TConfig>, 
     res: Response, 
     next: NextFunction, 
-    injected: GetInjectable, 
-    repo: GetRepositoryManager, 
-    db: GetPrismaManager
+    injected: Injectable, 
+    repo: RepositoryTypeMap, 
+    db: KustoDbProxy
 ) => Promise<any> | any;
 
 /**
@@ -66,7 +68,7 @@ type ExtractModelNames<T> = T extends { [K in keyof T]: any }
  * 특정 데이터베이스와 모델명에 대한 실제 모델 타입을 추출
  */
 type ExtractModelType<
-  TDatabase extends DatabaseNamesUnion,
+  TDatabase extends string,
   TModel extends string
 > = TDatabase extends keyof DatabaseClientMap
   ? DatabaseClientMap[TDatabase] extends { [K in TModel]: { create: (args: { data: infer TCreate }) => any } }
@@ -79,7 +81,7 @@ type ExtractModelType<
  * 생성/수정 후 반환되는 모델 타입을 추출
  */
 type ExtractModelResultType<
-  TDatabase extends DatabaseNamesUnion,
+  TDatabase extends string,
   TModel extends string
 > = TDatabase extends keyof DatabaseClientMap
   ? DatabaseClientMap[TDatabase] extends { [K in TModel]: { create: (...args: any[]) => Promise<infer TResult> } }
@@ -92,7 +94,7 @@ type ExtractModelResultType<
  * INDEX 훅에서 사용할 쿼리 옵션 타입을 추출
  */
 type ExtractFindManyArgsType<
-  TDatabase extends DatabaseNamesUnion,
+  TDatabase extends string,
   TModel extends string
 > = TDatabase extends keyof DatabaseClientMap
   ? DatabaseClientMap[TDatabase] extends { [K in TModel]: { findMany: (args?: infer TArgs) => any } }
@@ -105,7 +107,7 @@ type ExtractFindManyArgsType<
  * SHOW 훅에서 사용할 쿼리 옵션 타입을 추출
  */
 type ExtractFindUniqueArgsType<
-  TDatabase extends DatabaseNamesUnion,
+  TDatabase extends string,
   TModel extends string
 > = TDatabase extends keyof DatabaseClientMap
   ? DatabaseClientMap[TDatabase] extends { [K in TModel]: { findUnique: (args: infer TArgs) => any } }
@@ -117,7 +119,7 @@ type ExtractFindUniqueArgsType<
  * Get available model names for a specific database
  * (Prisma에서 정적으로 모델명만 추출하기 위한 타입)
  */
-type ModelNamesFor<T extends DatabaseNamesUnion> = T extends keyof DatabaseClientMap
+type ModelNamesFor<T extends string> = T extends keyof DatabaseClientMap
   ? ExtractModelNames<DatabaseClientMap[T]>
   : never;
 
@@ -228,7 +230,7 @@ export class ExpressRouter {
                 
                 // Dependency injector에서 모든 injectable 모듈 가져오기
                 const injected = DependencyInjector.getInstance().getInjectedModules();
-                handler(req, res, next, injected, repositoryManager, prismaManager);
+                handler(req, res, next, injected, kustoManager.repo, kustoManager.db);
             } catch (error) {
                 next(error);
             }
@@ -243,7 +245,7 @@ export class ExpressRouter {
             try {
                 // Dependency injector에서 모든 injectable 모듈 가져오기
                 const injected = DependencyInjector.getInstance().getInjectedModules();
-                handler(req, res, injected, repositoryManager, prismaManager);
+                handler(req, res, injected, kustoManager.repo, kustoManager.db);
             } catch (error) {
                 next(error);
             }
@@ -2305,7 +2307,7 @@ export class ExpressRouter {
      * @param options CRUD 옵션 설정
      */
     public CRUD<
-        T extends DatabaseNamesUnion,
+        T extends string,
         M extends ModelNamesFor<T> = ModelNamesFor<T>
     >(
         databaseName: T, 

@@ -1,10 +1,10 @@
 import { DependencyInjector } from './dependencyInjector';
 import { repositoryManager } from './repositoryManager';
 import { prismaManager } from './prismaManager';
-import { Injectable } from './types/generated-injectable-types';
-import { RepositoryTypeMap, RepositoryName } from './types/generated-repository-types';
-import { PrismaManagerClientOverloads, DatabaseNamesUnion, DatabaseClientType } from './types/generated-db-types';
-import { GetInjectable, GetRepositoryManager } from './types/configurable-types';
+import type { Injectable } from './types/generated-injectable-types';
+import type { RepositoryTypeMap, RepositoryName } from './types/generated-repository-types';
+import type { DatabaseClientMap } from './types/generated-db-types';
+import type { GetInjectable, GetRepositoryManager } from './types/configurable-types';
 
 
 
@@ -14,16 +14,16 @@ import { GetInjectable, GetRepositoryManager } from './types/configurable-types'
  */
 export interface KustoDbProxy {
     /** 비동기 클라이언트 가져오기 (재연결 로직 포함) */
-    getClient<T extends DatabaseNamesUnion>(name: T): Promise<DatabaseClientType<T>>;
-    getClient<T = any>(name: string): Promise<T>;
+    getClient<T extends keyof DatabaseClientMap>(name: T): Promise<DatabaseClientMap[T]>;
+    getClient<T extends string>(name: T): Promise<any>;
     
     /** 동기 클라이언트 가져오기 (재연결 로직 없음) */
-    getClientSync<T extends DatabaseNamesUnion>(name: T): DatabaseClientType<T>;
-    getClientSync<T = any>(name: string): T;
+    getClientSync<T extends keyof DatabaseClientMap>(name: T): DatabaseClientMap[T];
+    getClientSync<T extends string>(name: T): any;
 
     /** 래핑된 클라이언트 가져오기 (동기, Repository에서 사용) */
-    getWrap<T extends DatabaseNamesUnion>(name: T): DatabaseClientType<T>;
-    getWrap<T = any>(name: string): T;
+    getWrap<T extends keyof DatabaseClientMap>(name: T): DatabaseClientMap[T];
+    getWrap<T extends string>(name: T): any;
 
     /** 사용 가능한 데이터베이스 목록 */
     available: string[];
