@@ -106,6 +106,7 @@ export type {
     Injectable,
     Middleware,
     MiddlewareParams,
+    MiddlewareParamMapping,
     ModuleName,
     MiddlewareName,
     MiddlewareParamName
