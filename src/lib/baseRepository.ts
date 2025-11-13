@@ -108,7 +108,7 @@ export abstract class BaseRepository<T extends DatabaseNamesUnion> {
      * @returns 타입 안전한 Prisma 클라이언트 (Promise)
      */
     protected async getAsyncClient(): Promise<DatabaseClientMap[T]> {
-        return await this.db.getClient(this.repositoryDatabaseName) as DatabaseClientMap[T];
+        return await this.db.getClient(this.repositoryDatabaseName);
     }
 
     /**

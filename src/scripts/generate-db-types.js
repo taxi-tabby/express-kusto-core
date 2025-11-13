@@ -50,6 +50,13 @@ function generateDatabaseTypes(dbPath = './src/app/db', outputDir = './src/core'
     `  getClient(databaseName: '${dbName}'): Promise<${capitalize(dbName)}Instance>;`
   ).join('\n');
 
+  // Generate generic method signatures with better type inference
+  const genericWrapSignature = `  getWrap<TDbName extends keyof DatabaseClientMap>(databaseName: TDbName): DatabaseClientMap[TDbName];
+  getWrap<TDbName extends string>(databaseName: TDbName): any;`;
+
+  const genericClientSignature = `  getClient<TDbName extends keyof DatabaseClientMap>(databaseName: TDbName): Promise<DatabaseClientMap[TDbName]>;
+  getClient<TDbName extends string>(databaseName: TDbName): Promise<any>;`;
+
   // Generate PrismaManager class extension with proper overloads
   const classExtension = `
 /**
@@ -106,7 +113,7 @@ export type DatabaseNamesUnion = ${databaseNamesUnion};
  */
 export interface PrismaManagerWrapOverloads {
 ${methodOverloads}
-  getWrap<T extends string>(databaseName: T): DatabaseClientType<T>;
+${genericWrapSignature}
 }
 
 /**
@@ -114,7 +121,7 @@ ${methodOverloads}
  */
 export interface PrismaManagerClientOverloads {
 ${getClientOverloads}
-  getClient<T = any>(databaseName: string): Promise<T>;
+${genericClientSignature}
 }
 
 ${classExtension}

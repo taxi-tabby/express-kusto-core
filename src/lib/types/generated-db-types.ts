@@ -41,7 +41,8 @@ export type DatabaseNamesUnion = string;
  */
 export interface PrismaManagerWrapOverloads {
   // getWrap(databaseName: 'temporary'): TemporaryInstance;
-  getWrap<T extends string>(databaseName: T): DatabaseClientType<T>;
+  getWrap<TDbName extends keyof DatabaseClientMap>(databaseName: TDbName): DatabaseClientMap[TDbName];
+  getWrap<TDbName extends string>(databaseName: TDbName): any;
 }
 
 /**
@@ -49,7 +50,8 @@ export interface PrismaManagerWrapOverloads {
  */
 export interface PrismaManagerClientOverloads {
   // getClient(databaseName: 'temporary'): Promise<TemporaryInstance>;
-  getClient<T = any>(databaseName: string): Promise<T>;
+  getClient<TDbName extends keyof DatabaseClientMap>(databaseName: TDbName): Promise<DatabaseClientMap[TDbName]>;
+  getClient<TDbName extends string>(databaseName: TDbName): Promise<any>;
 }
 
 

@@ -736,7 +736,15 @@ export class PrismaManager implements PrismaManagerWrapOverloads, PrismaManagerC
 	 * Includes automatic reconnection logic for serverless environments
 	 * Returns the actual client with full type information preserved from dynamic import
 	 */
-	public async getClient<T = any>(databaseName: string): Promise<T> {
+	public async getClient<TDbName extends keyof DatabaseClientMap>(
+		databaseName: TDbName
+	): Promise<DatabaseClientMap[TDbName]>;
+	public async getClient<TDbName extends string>(
+		databaseName: TDbName
+	): Promise<any>;
+	public async getClient<TDbName extends string>(
+		databaseName: TDbName
+	): Promise<any> {
 		try {
 			// Get caller information for hint tracking
 			const callerInfo = this.getCallerSourceInfo();
@@ -774,7 +782,7 @@ export class PrismaManager implements PrismaManagerWrapOverloads, PrismaManagerC
 			}
 
 			// 클라이언트 반환 - 실제 쿼리 실행 시 연결 오류가 발생하면 그때 재연결
-			return client as T;
+			return client as any;
 		} catch (error) {
 			if (error instanceof Error) {
 				throw error; // 이미 처리된 오류는 그대로 전달
@@ -846,7 +854,15 @@ export class PrismaManager implements PrismaManagerWrapOverloads, PrismaManagerC
 	 * This method provides the best TypeScript intellisense by preserving the original client type
 	 * Synchronous version for use in repositories
 	 */
-	public getWrap(databaseName: string): any {
+	public getWrap<TDbName extends keyof DatabaseClientMap>(
+		databaseName: TDbName
+	): DatabaseClientMap[TDbName];
+	public getWrap<TDbName extends string>(
+		databaseName: TDbName
+	): any;
+	public getWrap<TDbName extends string>(
+		databaseName: TDbName
+	): any {
 		try {
 			if (!this.initialized) {
 				throw new Error('데이터베이스 관리자가 초기화되지 않았습니다. 애플리케이션 시작 시 initialize()를 호출했는지 확인하세요.');
