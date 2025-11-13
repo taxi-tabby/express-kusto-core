@@ -20,6 +20,35 @@ export function generateDatabaseTypes(): void {
 }
 
 /**
+ * Run database CLI tool
+ * @param args - Command line arguments to pass to the CLI
+ * @example
+ * runDatabaseCLI(['migrate', 'dev']);
+ * runDatabaseCLI(['push']);
+ * runDatabaseCLI(['reset']);
+ */
+export function runDatabaseCLI(args: string[] = []): void {
+    const { spawn } = require('child_process');
+    const path = require('path');
+    
+    const cliPath = path.join(__dirname, 'kusto-db-cli.ts');
+    const child = spawn('node', ['-r', 'ts-node/register', cliPath, ...args], {
+        stdio: 'inherit',
+        shell: true
+    });
+    
+    child.on('error', (error: Error) => {
+        console.error('Failed to start database CLI:', error);
+    });
+    
+    child.on('exit', (code: number | null) => {
+        if (code !== 0) {
+            console.error(`Database CLI exited with code ${code}`);
+        }
+    });
+}
+
+/**
  * Generate injectable types for dependency injection
  */
 export async function generateInjectableTypes(): Promise<void> {
