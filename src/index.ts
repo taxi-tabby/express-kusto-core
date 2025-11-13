@@ -89,6 +89,12 @@ export { RelationshipConfigManager, RelationshipPattern, ManyToManyConfig } from
 // Type Augmentation Support
 // ============================================
 export type { KustoConfigurableTypes, GetInjectable, GetRepositoryManager, GetPrismaManager } from './lib/types/configurable-types';
+export type { 
+    BaseHandlerFunction, 
+    BaseValidatedHandlerFunction, 
+    BaseMiddlewareHandlerFunction, 
+    BaseValidatedMiddlewareHandlerFunction 
+} from './lib/types/handler-types';
 
 // ============================================
 // External utilities

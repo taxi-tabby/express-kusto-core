@@ -19,44 +19,38 @@ import './types/express-extensions';
 import { KustoConfigurableTypes, GetInjectable, GetRepositoryManager, GetPrismaManager } from './types/configurable-types';
 
 
-export type HandlerFunction<T extends KustoConfigurableTypes = KustoConfigurableTypes> = (
+export type HandlerFunction = (
     req: Request, 
     res: Response, 
-    injected: GetInjectable<T>, 
-    repo: GetRepositoryManager<T>, 
-    db: GetPrismaManager<T>
+    injected: GetInjectable, 
+    repo: GetRepositoryManager, 
+    db: GetPrismaManager
 ) => void;
 
-export type ValidatedHandlerFunction<
-    TConfig extends RequestConfig = RequestConfig,
-    T extends KustoConfigurableTypes = KustoConfigurableTypes
-> = (
+export type ValidatedHandlerFunction<TConfig extends RequestConfig = RequestConfig> = (
     req: ValidatedRequest<TConfig>, 
     res: Response, 
-    injected: GetInjectable<T>, 
-    repo: GetRepositoryManager<T>, 
-    db: GetPrismaManager<T>
+    injected: GetInjectable, 
+    repo: GetRepositoryManager, 
+    db: GetPrismaManager
 ) => Promise<any> | any;
 
-export type MiddlewareHandlerFunction<T extends KustoConfigurableTypes = KustoConfigurableTypes> = (
+export type MiddlewareHandlerFunction = (
     req: Request, 
     res: Response, 
     next: NextFunction, 
-    injected: GetInjectable<T>, 
-    repo: GetRepositoryManager<T>, 
-    db: GetPrismaManager<T>
+    injected: GetInjectable, 
+    repo: GetRepositoryManager, 
+    db: GetPrismaManager
 ) => void;
 
-export type ValidatedMiddlewareHandlerFunction<
-    TConfig extends RequestConfig = RequestConfig,
-    T extends KustoConfigurableTypes = KustoConfigurableTypes
-> = (
+export type ValidatedMiddlewareHandlerFunction<TConfig extends RequestConfig = RequestConfig> = (
     req: ValidatedRequest<TConfig>, 
     res: Response, 
     next: NextFunction, 
-    injected: GetInjectable<T>, 
-    repo: GetRepositoryManager<T>, 
-    db: GetPrismaManager<T>
+    injected: GetInjectable, 
+    repo: GetRepositoryManager, 
+    db: GetPrismaManager
 ) => Promise<any> | any;
 
 /**
