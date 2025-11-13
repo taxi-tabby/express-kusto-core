@@ -121,7 +121,7 @@ type ExtractFindUniqueArgsType<
  */
 type ModelNamesFor<T extends string> = T extends keyof DatabaseClientMap
   ? ExtractModelNames<DatabaseClientMap[T]>
-  : never;
+  : string;
 
 // Re-export from middlewareHelpers for convenience
 export {
@@ -1160,7 +1160,10 @@ export class ExpressRouter {
             
 
             if (!middlewareInstance) {
-                throw new Error(`Middleware '${String(middlewareName)}' not found in dependency injector`);
+                console.warn(`⚠️ Middleware '${String(middlewareName)}' not found in dependency injector. Skipping middleware application.`);
+                console.warn(`   Available middlewares: [${Object.keys(injector.getInjectedMiddlewares()).join(', ')}]`);
+                console.warn(`   Please ensure the middleware is registered in your project's middleware registry.`);
+                return this; // Return early instead of throwing
             }            
             
             // 미들웨어 파라미터 키는 middleware name과 동일하게 사용
@@ -1238,8 +1241,9 @@ export class ExpressRouter {
             return this;
             
         } catch (error) {
-            console.error(`Error applying middleware '${String(middlewareName)}':`, error);
-            throw error;
+            console.error(`❌ Error applying middleware '${String(middlewareName)}':`, error);
+            console.warn(`   Skipping middleware application and continuing route setup.`);
+            return this; // Return this to allow chaining to continue
         }
     }
 
